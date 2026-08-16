@@ -678,6 +678,276 @@ const CRIMES_DATA = [
       societalImpact: "Přenos břemene na státní sociální dávky, prohlubování dětské chudoby.",
       harmScore: 45
     }
+  },
+  {
+    id: "prestupek-drobna-kradez",
+    name: "Krádež zboží v obchodě (škoda do 10 000 Kč)",
+    paragraph: "§ 8 odst. 1 písm. a) zák. č. 251/2016 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Přestupky proti majetku",
+    scenario: "Zákazník v supermarketu schoval do kapsy lahev alkoholu a drahé parfémy v celkové hodnotě 4 500 Kč a prošel pokladní zónou bez zaplacení, kde jej zadržela ostraha.",
+    legalText: "Fyzická osoba se dopustí přestupku tím, že si přisvojí cizí věc krádeží, pokud způsobená škoda nepřesahuje 10 000 Kč. Za přestupek lze uložit pokutu do 50 000 Kč (při opakování do 70 000 Kč).",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 50000,
+    statutoryText: "Přestupek: Pokuta až 50 000 Kč (při recidivě 70 000 Kč)",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 92,
+      otherPct: 8,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Projednáváno přestupkovou komisí obce či Policií ČR; sankcí je finanční pokuta a povinnost nahradit škodu."
+    },
+    harmAnalysis: {
+      victimHarm: "Drobná majetková újma obchodu, zboží bylo zpravidla vráceno nepoškozené.",
+      societalImpact: "Drobné parazitování na maloobchodě; při masovém výskytu zvyšuje náklady obchodníků na bezpečnostní systémy.",
+      harmScore: 18
+    }
+  },
+  {
+    id: "prestupek-alkohol-pod-1-promile",
+    name: "Řízení pod vlivem alkoholu do 1,0 ‰ (přestupek)",
+    paragraph: "§ 125c odst. 1 písm. b) zák. č. 361/2000 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Dopravní přestupky",
+    scenario: "Řidič byl při namátkové silniční kontrole podroben dechové zkoušce s naměřenou hodnotou 0,7 promile alkoholu v dechu po dvou pivech vypitých k obědu.",
+    legalText: "Fyzická osoba se dopustí přestupku tím, že řídí vozidlo ve stavu vylučujícím způsobilost, avšak nedosahujícím stavu těžké opilosti (do 1,0 ‰). Sankce: pokuta 7 000 až 25 000 Kč, zákaz řízení na 6 až 18 měsíců a 6 trestných bodů.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 25000,
+    statutoryText: "Přestupek: Pokuta 7 000 až 25 000 Kč + zákaz řízení 6–18 měsíců + 6 bodů",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 98,
+      otherPct: 2,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Řešeno obecním úřadem obce s rozšířenou působností; obligatorně se ukládá citelná pokuta a zákaz řízení."
+    },
+    harmAnalysis: {
+      victimHarm: "Ke škodě ani nehodě nedošlo, šlo o preventivní zadržení podnapilého řidiče.",
+      societalImpact: "Snížení reakční doby řidiče a zvýšení statistického rizika kolize na pozemních komunikacích.",
+      harmScore: 32
+    }
+  },
+  {
+    id: "prestupek-rychlost-obec-40",
+    name: "Překročení rychlosti v obci o více než 40 km/h",
+    paragraph: "§ 125c odst. 1 písm. f) bod 1 zák. č. 361/2000 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Dopravní přestupky",
+    scenario: "Mladý řidič jel v obci v zástavbě rodinných domů rychlostí 98 km/h namísto povolených 50 km/h, což zaznamenal stacionární radar městské policie.",
+    legalText: "Překročení nejvyšší dovolené rychlosti v obci o 40 km/h a více. Sankce: pokuta ve správním řízení 7 000 až 25 000 Kč, zákaz řízení na 6 až 18 měsíců a 6 bodů.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 25000,
+    statutoryText: "Přestupek: Pokuta 7 000 až 25 000 Kč + zákaz řízení 6–18 měsíců + 6 bodů",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 96,
+      otherPct: 4,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Nelze řešit na místě příkazovým blokem; ve správním řízení se standardně ukládá zákaz řízení."
+    },
+    harmAnalysis: {
+      victimHarm: "Bez přímého zranění, avšak vznik extrémně nebezpečné brzdné dráhy v obytné zóně.",
+      societalImpact: "Hrubá bezohlednost vůči chodcům a cyklistům, výrazné navýšení rizika fatálních nehod.",
+      harmScore: 36
+    }
+  },
+  {
+    id: "prestupek-jizda-cervena",
+    name: "Jízda na červenou (nezastavení na signál STŮJ)",
+    paragraph: "§ 125c odst. 1 písm. f) bod 5 zák. č. 361/2000 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Dopravní přestupky",
+    scenario: "Řidič ve snaze stihnout křižovatku projel frekventovanou křižovatku 3 sekundy po naskočení červeného světla a donutil odbočující vozidlo prudce zabrzdit.",
+    legalText: "Nezastavení vozidla na signál, který přikazuje řidiči zastavit (červené světlo). Sankce: pokuta 4 500 až 9 000 Kč ve správním řízení (nebo 2 500 až 3 500 Kč na místě) a 6 trestných bodů.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 9000,
+    statutoryText: "Přestupek: Pokuta 4 500 až 9 000 Kč (na místě 3 500 Kč) + 6 bodů",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 99,
+      otherPct: 1,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Běžně řešeno na místě Policií ČR blokovou pokutou a připsáním 6 bodů do karty řidiče."
+    },
+    harmAnalysis: {
+      victimHarm: "Vylekání a ohrožení druhého řidiče, naštěstí bez fyzického střetu.",
+      societalImpact: "Narušení plynulosti a elementární předvídatelnosti provozu na křižovatkách.",
+      harmScore: 26
+    }
+  },
+  {
+    id: "prestupek-mobil-za-volantem",
+    name: "Používání mobilního telefonu za jízdy",
+    paragraph: "§ 125c odst. 1 písm. f) bod 10 zák. č. 361/2000 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Dopravní přestupky",
+    scenario: "Řidič na dálnici při rychlosti 130 km/h držel v ruce mobilní telefon a psal textovou zprávu, přičemž nedodržoval jízdní pruh.",
+    legalText: "Držení telefonního přístroje nebo jiného hovorového zařízení v ruce nebo jiným způsobem při řízení. Sankce: pokuta 2 500 až 3 500 Kč na místě (4 000 až 10 000 Kč ve správním) a 4 body.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 10000,
+    statutoryText: "Přestupek: Pokuta 2 500 až 3 500 Kč na místě (až 10 000 Kč ve správním) + 4 body",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 99,
+      otherPct: 1,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Masový přestupek, řešený nejčastěji na místě blokovou pokutou a 4 trestnými body."
+    },
+    harmAnalysis: {
+      victimHarm: "Bezprostřední újma nevznikla, vzniká tzv. tunelové vidění a ztráta pozornosti.",
+      societalImpact: "Jedna z nejčastějších příčin tragických dopravních nehod v důsledku nevěnování se řízení.",
+      harmScore: 24
+    }
+  },
+  {
+    id: "prestupek-ruseni-nocniho-klidu",
+    name: "Rušení nočního klidu (hlasitá hudba a párty)",
+    paragraph: "§ 5 odst. 1 písm. d) zák. č. 251/2016 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Přestupky proti veřejnému pořádku",
+    scenario: "Nájemník v panelovém domě ve dvě hodiny ráno pouštěl hlasitou hudbu s basy přes výkonnou reprosoustavu, čímž opakovaně vzbudil a vyrušil desítky sousedů v domě.",
+    legalText: "Porušení nočního klidu v době od 22:00 do 06:00 hodin. Sankce: pokuta až do výše 10 000 Kč (při opakování až 15 000 Kč).",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 10000,
+    statutoryText: "Přestupek: Pokuta až 10 000 Kč (opakovaně až 15 000 Kč)",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 88,
+      otherPct: 12,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Řešeno městskou policií výjezdem na místo, domluvou či blokovou pokutou na místě (do 2 000 Kč)."
+    },
+    harmAnalysis: {
+      victimHarm: "Spánková deprivace, vyčerpání, podrážděnost sousedů a narušení odpočinku před prací.",
+      societalImpact: "Eroze dobrých sousedských vztahů a bezohlednost v komunitním bydlení.",
+      harmScore: 12
+    }
+  },
+  {
+    id: "prestupek-urazka-na-cti",
+    name: "Ublížení na cti (vulgární urážka souseda)",
+    paragraph: "§ 7 odst. 1 písm. a) zák. č. 251/2016 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Přestupky proti občanskému soužití",
+    scenario: "Pachatel při sousedském sporu o parkovací místo před ostatními obyvateli domu vulgárně nadával sousedce, označil ji za zlodějku a psychopatku a plivl před ni.",
+    legalText: "Fyzická osoba se dopustí přestupku tím, že jinému ublíží na cti tím, že ho urazí nebo vydá v posměch. Sankce: pokuta až do výše 10 000 Kč.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 10000,
+    statutoryText: "Přestupek: Pokuta až 10 000 Kč",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 70,
+      otherPct: 30,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Projednáváno přestupkovou komisí obce; často končí smírem nebo uložením mírné pokuty."
+    },
+    harmAnalysis: {
+      victimHarm: "Ponížení, rozrušení, poškození osobní důstojnosti před komunitou.",
+      societalImpact: "Úpadek společenské slušnosti a kultivovaného řešení sporů mezi občany.",
+      harmScore: 10
+    }
+  },
+  {
+    id: "prestupek-drobne-napadeni",
+    name: "Fyzické napadení beze škody na zdraví (facka / strčení)",
+    paragraph: "§ 7 odst. 1 písm. b) zák. č. 251/2016 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Přestupky proti občanskému soužití",
+    scenario: "Opilý muž v restauraci po slovní potyčce vrazil do druhého hosta a dal mu facku, která způsobila zrudnutí tváře bez potřeby lékařského ošetření či pracovní neschopnosti.",
+    legalText: "Fyzická osoba se dopustí přestupku tím, že jinému ublíží na zdraví (drobné ublížení bez trvalých následků). Sankce: pokuta až do výše 20 000 Kč.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 20000,
+    statutoryText: "Přestupek: Pokuta až 20 000 Kč",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 85,
+      otherPct: 15,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Projednáváno městským úřadem po postoupení Policií ČR, která vyloučila trestní charakter činu."
+    },
+    harmAnalysis: {
+      victimHarm: "Krátkodobá bolest, ponížení a strach, bez trvalé poruchy zdraví.",
+      societalImpact: "Fyzická agrese na veřejnosti narušující pocit bezpečí návštěvníků podniku.",
+      harmScore: 20
+    }
+  },
+  {
+    id: "prestupek-drzeni-maleho-mnozstvi-drog",
+    name: "Držení malého množství drog pro vlastní potřebu",
+    paragraph: "§ 39 odst. 2 písm. a) zák. č. 167/1998 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Přestupky na úseku návykových látek",
+    scenario: "Mladík byl na hudebním festivalu zkontrolován policií a měl u sebe v kapse 2 gramy sušiny konopí (marihuany) určené výhradně pro jeho vlastní osobní spotřebu.",
+    legalText: "Neoprávněné přechovávání omamné nebo psychotropní látky v množství nikoli větším než malém (do 10 g konopí / 1,5 g pervitinu). Sankce: pokuta až do výše 15 000 Kč a propadnutí látky.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 15000,
+    statutoryText: "Přestupek: Pokuta až 15 000 Kč + propadnutí látky",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 90,
+      otherPct: 10,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Řešeno Policií ČR na místě nebo obecním úřadem ve správním řízení uložením pokuty."
+    },
+    harmAnalysis: {
+      victimHarm: "Pachatel škodí pouze svému vlastnímu zdraví, nevzniká přímá oběť.",
+      societalImpact: "Podpora nelegálního trhu s drogami nákupem látky, zdravotní rizika spojená s konzumací.",
+      harmScore: 14
+    }
+  },
+  {
+    id: "prestupek-cerny-vylep-odpad",
+    name: "Znečištění veřejného prostranství / nepovolený výlep plakátů",
+    paragraph: "§ 5 odst. 1 písm. f) zák. č. 251/2016 Sb.",
+    delictType: "prestupek",
+    category: "Prestupky",
+    categoryLabel: "Přestupky proti veřejnému pořádku",
+    scenario: "Pořadatel koncertu neoprávněně polepil lepidlem sloupy veřejného osvětlení a zastávku MHD desítkami reklamních letáků na komerční akci.",
+    legalText: "Znečištění veřejného prostranství nebo neoprávněné užívání veřejného prostranství pro reklamu. Sankce: pokuta až do výše 20 000 Kč.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 0,
+    statutoryFineMaxKc: 20000,
+    statutoryText: "Přestupek: Pokuta až 20 000 Kč",
+    courtStats: {
+      unconditionalPrisonPct: 0,
+      probationPct: 0,
+      finePct: 94,
+      otherPct: 6,
+      avgPrisonSentenceMonths: 0,
+      avgSentenceDescription: "Ukládá městská policie nebo odbor životního prostředí obce."
+    },
+    harmAnalysis: {
+      victimHarm: "Náklady města na čištění a odstranění lepidla a plakátů.",
+      societalImpact: "Vizuální smog, neoprávněné komerční využívání společného prostoru občanů.",
+      harmScore: 8
+    }
   }
 ];
 
@@ -685,3 +955,4 @@ const CRIMES_DATA = [
 if (typeof window !== "undefined") {
   window.CRIMES_DATA = CRIMES_DATA;
 }
+

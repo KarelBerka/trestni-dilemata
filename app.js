@@ -230,13 +230,20 @@
   // =========================================================================
 
   function renderCrimeCard(crime, sideLetter, kbdKey) {
+    const isPrestupek = crime.delictType === "prestupek";
+    const typeBadge = isPrestupek
+      ? `<span class="card-category-badge" style="border-color:#f59e0b; color:#fbbf24;">⚡ Přestupek</span>`
+      : `<span class="card-category-badge" style="border-color:#38bdf8; color:#38bdf8;">⚖️ Trestný čin</span>`;
+
     return `
       <div class="crime-card" id="card-${crime.id}" data-crime-id="${crime.id}" onclick="window.App.handleVote('${crime.id}')">
         <div class="card-header-meta">
-          <span class="card-category-badge">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            ${crime.categoryLabel}
-          </span>
+          <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+            ${typeBadge}
+            <span class="card-category-badge">
+              ${crime.categoryLabel}
+            </span>
+          </div>
           <span class="card-option-tag">Možnost ${sideLetter} (${kbdKey})</span>
         </div>
 
@@ -252,16 +259,16 @@
         </div>
 
         <button class="card-cta-btn" type="button">
-          <span>Tento čin je závažnější</span>
+          <span>Tento delikt je závažnější</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
 
         <div class="reveal-container" id="reveal-${crime.id}">
           <div class="verdict-tag-placeholder" id="verdict-tag-${crime.id}"></div>
 
-          <div class="detail-section-title">Zákonná sazba podle trestního zákoníku ČR</div>
+          <div class="detail-section-title">${isPrestupek ? "Zákonná sankce podle zákona o přestupcích" : "Zákonná sazba podle trestního zákoníku ČR"}</div>
           <div class="statutory-box">
-            <div class="statutory-sentence">
+            <div class="statutory-sentence" style="font-size: 1rem;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
               ${crime.statutoryText}
             </div>
@@ -270,10 +277,11 @@
 
           <div class="court-stats-box">
             <div class="court-stats-header">
-              <span class="detail-section-title" style="margin-bottom:0;">Reálná praxe českých soudů</span>
-              <span class="court-stats-badge">MSp ČR / JakTrestame.cz</span>
+              <span class="detail-section-title" style="margin-bottom:0;">${isPrestupek ? "Správní a přestupková praxe" : "Reálná praxe českých soudů"}</span>
+              <span class="court-stats-badge">${isPrestupek ? "Městský úřad / PČR" : "MSp ČR / JakTrestame.cz"}</span>
             </div>
 
+            ${!isPrestupek ? `
             <div class="stats-breakdown-bars">
               <div class="stat-bar-segment stat-bar-unconditional" style="width: ${crime.courtStats.unconditionalPrisonPct}%;" title="Vězení: ${crime.courtStats.unconditionalPrisonPct}%"></div>
               <div class="stat-bar-segment stat-bar-probation" style="width: ${crime.courtStats.probationPct}%;" title="Podmínka: ${crime.courtStats.probationPct}%"></div>
@@ -292,11 +300,17 @@
               <strong>Průměrná délka vězení:</strong> ${Math.round(crime.courtStats.avgPrisonSentenceMonths / 12 * 10) / 10} let (${crime.courtStats.avgPrisonSentenceMonths} měsíců).<br>
               ${crime.courtStats.avgSentenceDescription}
             </div>
+            ` : `
+            <div class="court-summary-text">
+              <strong>Typické řešení:</strong> ${crime.courtStats.avgSentenceDescription}<br>
+              U přestupků se <strong>neukládá trest odnětí svobody</strong> a zápis do Rejstříku trestů (pouze evidence přestupků u vybraných deliktů).
+            </div>
+            `}
           </div>
 
           <div class="harm-analysis-box">
             <div class="harm-row">
-              <span class="harm-title">Újma oběti: </span>
+              <span class="harm-title">Újma oběti / dotčených: </span>
               <span class="harm-desc">${crime.harmAnalysis.victimHarm}</span>
             </div>
             <div class="harm-row">
@@ -372,24 +386,41 @@
     state.crimeScores[otherCrime.id].matches++;
     saveStoredScores();
 
-    // Záznam do cloudu (pokud je nakonfigurován)
+    // Záznam do cloudu
     recordVoteToCloud(selectedCrime.id, otherCrime.id);
 
-    // Posouzení přísnosti podle Trestního zákoníku ČR
+    // Posouzení přísnosti podle českého právního řádu
     let lawStrictId = null;
-    if (crimeA.statutoryMaxYears > crimeB.statutoryMaxYears) {
+    const isPrestupekA = crimeA.delictType === "prestupek";
+    const isPrestupekB = crimeB.delictType === "prestupek";
+
+    if (!isPrestupekA && isPrestupekB) {
+      // Trestný čin je vždy ze zákona závažnější než přestupek
       lawStrictId = crimeA.id;
-    } else if (crimeB.statutoryMaxYears > crimeA.statutoryMaxYears) {
+    } else if (isPrestupekA && !isPrestupekB) {
       lawStrictId = crimeB.id;
+    } else if (isPrestupekA && isPrestupekB) {
+      // Porovnání dvou přestupků podle maximální pokuty nebo harmScore
+      const fineA = crimeA.statutoryFineMaxKc || 0;
+      const fineB = crimeB.statutoryFineMaxKc || 0;
+      if (fineA > fineB) lawStrictId = crimeA.id;
+      else if (fineB > fineA) lawStrictId = crimeB.id;
+    } else {
+      // Porovnání dvou trestných činů podle maximální sazby vězení
+      if (crimeA.statutoryMaxYears > crimeB.statutoryMaxYears) {
+        lawStrictId = crimeA.id;
+      } else if (crimeB.statutoryMaxYears > crimeA.statutoryMaxYears) {
+        lawStrictId = crimeB.id;
+      }
     }
 
-    // Posouzení přísnosti podle soudní praxe
-    const severityA = (crimeA.courtStats.unconditionalPrisonPct * 0.5) + (crimeA.courtStats.avgPrisonSentenceMonths * 1.5);
-    const severityB = (crimeB.courtStats.unconditionalPrisonPct * 0.5) + (crimeB.courtStats.avgPrisonSentenceMonths * 1.5);
+    // Posouzení přísnosti podle reálné praxe
+    const severityA = (crimeA.courtStats.unconditionalPrisonPct * 0.5) + (crimeA.courtStats.avgPrisonSentenceMonths * 1.5) + (crimeA.harmAnalysis.harmScore * 0.2);
+    const severityB = (crimeB.courtStats.unconditionalPrisonPct * 0.5) + (crimeB.courtStats.avgPrisonSentenceMonths * 1.5) + (crimeB.harmAnalysis.harmScore * 0.2);
     let courtStrictId = null;
-    if (severityA > severityB + 5) {
+    if (severityA > severityB + 3) {
       courtStrictId = crimeA.id;
-    } else if (severityB > severityA + 5) {
+    } else if (severityB > severityA + 3) {
       courtStrictId = crimeB.id;
     }
 
@@ -423,12 +454,29 @@
     const el = document.getElementById(`verdict-tag-${targetCrime.id}`);
     if (!el) return;
 
-    if (lawStrictId === null) {
-      el.innerHTML = `<span class="verdict-tag equal">⚖️ Stejná zákonná horní sazba (${targetCrime.statutoryMaxYears} let)</span>`;
-    } else if (lawStrictId === targetCrime.id) {
-      el.innerHTML = `<span class="verdict-tag stricter">🔴 Zákonem trestán přísněji (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
+    const isPrestTarget = targetCrime.delictType === "prestupek";
+    const isPrestOpponent = opponentCrime.delictType === "prestupek";
+
+    if (!isPrestTarget && isPrestOpponent) {
+      el.innerHTML = `<span class="verdict-tag stricter">🔴 Trestný čin (ze zákona závažnější než přestupek)</span>`;
+    } else if (isPrestTarget && !isPrestOpponent) {
+      el.innerHTML = `<span class="verdict-tag milder">🟢 Pouze přestupek (správní delikt bez vězení)</span>`;
+    } else if (isPrestTarget && isPrestOpponent) {
+      if (lawStrictId === null) {
+        el.innerHTML = `<span class="verdict-tag equal">⚖️ Srovnatelná sankce přestupku</span>`;
+      } else if (lawStrictId === targetCrime.id) {
+        el.innerHTML = `<span class="verdict-tag stricter">🔴 Přísněji postihovaný přestupek (pokuta až ${targetCrime.statutoryFineMaxKc?.toLocaleString('cs-CZ')} Kč)</span>`;
+      } else {
+        el.innerHTML = `<span class="verdict-tag milder">🟢 Mírnější přestupek (pokuta do ${targetCrime.statutoryFineMaxKc?.toLocaleString('cs-CZ')} Kč)</span>`;
+      }
     } else {
-      el.innerHTML = `<span class="verdict-tag milder">🟢 Zákonem trestán mírněji (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
+      if (lawStrictId === null) {
+        el.innerHTML = `<span class="verdict-tag equal">⚖️ Stejná zákonná horní sazba (${targetCrime.statutoryMaxYears} let)</span>`;
+      } else if (lawStrictId === targetCrime.id) {
+        el.innerHTML = `<span class="verdict-tag stricter">🔴 Zákonem trestán přísněji (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
+      } else {
+        el.innerHTML = `<span class="verdict-tag milder">🟢 Zákonem trestán mírněji (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
+      }
     }
   }
 
@@ -442,14 +490,14 @@
     const agreedWithLaw = (lawStrictId === selectedCrime.id || lawStrictId === null);
     
     if (lawStrictId === null) {
-      headingEl.innerHTML = `⚖️ Oba činy mají shodnou horní zákonnou sazbu (${selectedCrime.statutoryMaxYears} let)`;
-      explEl.innerHTML = `Váš výběr <strong>${selectedCrime.name}</strong> reflektuje specifické vnímání újmy. V reálné soudní praxi dostávají pachatelé ${selectedCrime.name} průměrně ${Math.round(selectedCrime.courtStats.avgPrisonSentenceMonths / 12 * 10) / 10} let, zatímco u ${otherCrime.name} je to ${Math.round(otherCrime.courtStats.avgPrisonSentenceMonths / 12 * 10) / 10} let.`;
+      headingEl.innerHTML = `⚖️ Oba delikty mají srovnatelnou zákonnou závažnost`;
+      explEl.innerHTML = `Váš výběr <strong>${selectedCrime.name}</strong> reflektuje specifické vnímání újmy. ${selectedCrime.statutoryText}.`;
     } else if (agreedWithLaw) {
-      headingEl.innerHTML = `✓ Vaše volba se shoduje s Trestním zákoníkem ČR`;
-      explEl.innerHTML = `Zvolili jste <strong>${selectedCrime.name}</strong> (${selectedCrime.paragraph}), který zákoník postihuje sazbou až <strong>${selectedCrime.statutoryText}</strong>, zatímco za <strong>${otherCrime.name}</strong> hrozí <strong>${otherCrime.statutoryText}</strong>.`;
+      headingEl.innerHTML = `✓ Vaše volba se shoduje s českým právním řádem`;
+      explEl.innerHTML = `Zvolili jste <strong>${selectedCrime.name}</strong> (${selectedCrime.paragraph}), který právo postihuje přísněji (${selectedCrime.statutoryText}), než <strong>${otherCrime.name}</strong> (${otherCrime.statutoryText}).`;
     } else {
-      headingEl.innerHTML = `⚠️ Trestní zákoník ČR trestá přísněji druhý čin`;
-      explEl.innerHTML = `Vybrali jste <strong>${selectedCrime.name}</strong> (sazba ${selectedCrime.statutoryText}), avšak český zákoník stanovuje vyšší horní sazbu u <strong>${otherCrime.name}</strong> (${otherCrime.statutoryText}). Rozpor mezi morální intuicí veřejnosti a zákonnou sazbou bývá častý zejména u majetkových vs. osobních trestných činů.`;
+      headingEl.innerHTML = `⚠️ Právní řád ČR trestá přísněji druhý delikt`;
+      explEl.innerHTML = `Vybrali jste <strong>${selectedCrime.name}</strong> (${selectedCrime.statutoryText}), avšak české právo stanovuje přísnější postih u <strong>${otherCrime.name}</strong> (${otherCrime.statutoryText}).`;
     }
 
     resultPanel.classList.add("visible");
@@ -501,11 +549,11 @@
           </div>
           <div class="rank-statutory">
             <div class="rank-statutory-val">${crime.statutoryText}</div>
-            <div class="rank-statutory-label">Zákonná sazba</div>
+            <div class="rank-statutory-label">${crime.delictType === 'prestupek' ? 'Sankce přestupku' : 'Zákonná sazba'}</div>
           </div>
           <div class="rank-court-stat">
-            <div class="rank-court-val">${crime.courtStats.unconditionalPrisonPct} % vězení</div>
-            <div class="rank-court-label">Průměr: ${Math.round(crime.courtStats.avgPrisonSentenceMonths / 12 * 10) / 10} let</div>
+            <div class="rank-court-val">${crime.delictType === 'prestupek' ? 'Správní řízení' : crime.courtStats.unconditionalPrisonPct + ' % vězení'}</div>
+            <div class="rank-court-label">${crime.delictType === 'prestupek' ? 'Bez vězení' : 'Průměr: ' + (Math.round(crime.courtStats.avgPrisonSentenceMonths / 12 * 10) / 10) + ' let'}</div>
           </div>
         </div>
       `;
