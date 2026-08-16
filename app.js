@@ -325,17 +325,6 @@
             </div>
             `}
           </div>
-
-          <div class="harm-analysis-box">
-            <div class="harm-row">
-              <span class="harm-title">Újma oběti / dotčených: </span>
-              <span class="harm-desc">${crime.harmAnalysis.victimHarm}</span>
-            </div>
-            <div class="harm-row">
-              <span class="harm-title">Dopad na společnost: </span>
-              <span class="harm-desc">${crime.harmAnalysis.societalImpact}</span>
-            </div>
-          </div>
         </div>
       </div>
     `;
@@ -409,24 +398,24 @@
     // Záznam do cloudu
     recordVoteToCloud(selectedCrime.id, otherCrime.id);
 
-    // Posouzení přísnosti podle českého právního řádu
+    // Posouzení přísnosti podle zákonné sazby
     let lawStrictId = null;
     const isPrestupekA = crimeA.delictType === "prestupek";
     const isPrestupekB = crimeB.delictType === "prestupek";
 
     if (!isPrestupekA && isPrestupekB) {
-      // Trestný čin je vždy ze zákona závažnější než přestupek
+      // Trestný čin má vyšší zákonný postih než přestupek
       lawStrictId = crimeA.id;
     } else if (isPrestupekA && !isPrestupekB) {
       lawStrictId = crimeB.id;
     } else if (isPrestupekA && isPrestupekB) {
-      // Porovnání dvou přestupků podle maximální pokuty nebo harmScore
+      // Porovnání dvou přestupků podle maximální pokuty
       const fineA = crimeA.statutoryFineMaxKc || 0;
       const fineB = crimeB.statutoryFineMaxKc || 0;
       if (fineA > fineB) lawStrictId = crimeA.id;
       else if (fineB > fineA) lawStrictId = crimeB.id;
     } else {
-      // Porovnání dvou trestných činů podle maximální sazby vězení
+      // Porovnání dvou trestných činů podle maximální sazby odnětí svobody
       if (crimeA.statutoryMaxYears > crimeB.statutoryMaxYears) {
         lawStrictId = crimeA.id;
       } else if (crimeB.statutoryMaxYears > crimeA.statutoryMaxYears) {
@@ -434,9 +423,9 @@
       }
     }
 
-    // Posouzení přísnosti podle reálné praxe
-    const severityA = (crimeA.courtStats.unconditionalPrisonPct * 0.5) + (crimeA.courtStats.avgPrisonSentenceMonths * 1.5) + (crimeA.harmAnalysis.harmScore * 0.2);
-    const severityB = (crimeB.courtStats.unconditionalPrisonPct * 0.5) + (crimeB.courtStats.avgPrisonSentenceMonths * 1.5) + (crimeB.harmAnalysis.harmScore * 0.2);
+    // Posouzení přísnosti podle reálné soudní praxe
+    const severityA = (crimeA.courtStats.unconditionalPrisonPct * 0.5) + (crimeA.courtStats.avgPrisonSentenceMonths * 1.5) + (crimeA.harmAnalysis?.harmScore || 50) * 0.2;
+    const severityB = (crimeB.courtStats.unconditionalPrisonPct * 0.5) + (crimeB.courtStats.avgPrisonSentenceMonths * 1.5) + (crimeB.harmAnalysis?.harmScore || 50) * 0.2;
     let courtStrictId = null;
     if (severityA > severityB + 3) {
       courtStrictId = crimeA.id;
@@ -478,24 +467,24 @@
     const isPrestOpponent = opponentCrime.delictType === "prestupek";
 
     if (!isPrestTarget && isPrestOpponent) {
-      el.innerHTML = `<span class="verdict-tag stricter">🔴 Trestný čin (ze zákona závažnější než přestupek)</span>`;
+      el.innerHTML = `<span class="verdict-tag stricter">⚖️ Trestný čin (trestní řízení a sazba odnětí svobody)</span>`;
     } else if (isPrestTarget && !isPrestOpponent) {
-      el.innerHTML = `<span class="verdict-tag milder">🟢 Pouze přestupek (správní delikt bez vězení)</span>`;
+      el.innerHTML = `<span class="verdict-tag milder">⚖️ Přestupek (správní řízení a peněžitá sankce)</span>`;
     } else if (isPrestTarget && isPrestOpponent) {
       if (lawStrictId === null) {
-        el.innerHTML = `<span class="verdict-tag equal">⚖️ Srovnatelná sankce přestupku</span>`;
+        el.innerHTML = `<span class="verdict-tag equal">⚖️ Srovnatelná zákonná pokuta</span>`;
       } else if (lawStrictId === targetCrime.id) {
-        el.innerHTML = `<span class="verdict-tag stricter">🔴 Přísněji postihovaný přestupek (pokuta až ${targetCrime.statutoryFineMaxKc?.toLocaleString('cs-CZ')} Kč)</span>`;
+        el.innerHTML = `<span class="verdict-tag stricter">⚖️ Vyšší zákonná pokuta (až ${targetCrime.statutoryFineMaxKc?.toLocaleString('cs-CZ')} Kč)</span>`;
       } else {
-        el.innerHTML = `<span class="verdict-tag milder">🟢 Mírnější přestupek (pokuta do ${targetCrime.statutoryFineMaxKc?.toLocaleString('cs-CZ')} Kč)</span>`;
+        el.innerHTML = `<span class="verdict-tag milder">⚖️ Nižší zákonná pokuta (do ${targetCrime.statutoryFineMaxKc?.toLocaleString('cs-CZ')} Kč)</span>`;
       }
     } else {
       if (lawStrictId === null) {
-        el.innerHTML = `<span class="verdict-tag equal">⚖️ Stejná zákonná horní sazba (${targetCrime.statutoryMaxYears} let)</span>`;
+        el.innerHTML = `<span class="verdict-tag equal">⚖️ Shodná horní sazba (${targetCrime.statutoryMaxYears} let)</span>`;
       } else if (lawStrictId === targetCrime.id) {
-        el.innerHTML = `<span class="verdict-tag stricter">🔴 Zákonem trestán přísněji (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
+        el.innerHTML = `<span class="verdict-tag stricter">⚖️ Vyšší zákonná sazba (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
       } else {
-        el.innerHTML = `<span class="verdict-tag milder">🟢 Zákonem trestán mírněji (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
+        el.innerHTML = `<span class="verdict-tag milder">⚖️ Nižší zákonná sazba (až ${targetCrime.statutoryMaxYears} let vs. ${opponentCrime.statutoryMaxYears} let)</span>`;
       }
     }
   }
@@ -507,17 +496,15 @@
 
     if (!resultPanel || !headingEl || !explEl) return;
 
-    const agreedWithLaw = (lawStrictId === selectedCrime.id || lawStrictId === null);
-    
     if (lawStrictId === null) {
-      headingEl.innerHTML = `⚖️ Oba delikty mají srovnatelnou zákonnou závažnost`;
-      explEl.innerHTML = `Váš výběr <strong>${selectedCrime.name}</strong> reflektuje specifické vnímání újmy. ${selectedCrime.statutoryText}.`;
-    } else if (agreedWithLaw) {
-      headingEl.innerHTML = `✓ Vaše volba se shoduje s českým právním řádem`;
-      explEl.innerHTML = `Zvolili jste <strong>${selectedCrime.name}</strong> (${selectedCrime.paragraph}), který právo postihuje přísněji (${selectedCrime.statutoryText}), než <strong>${otherCrime.name}</strong> (${otherCrime.statutoryText}).`;
+      headingEl.innerHTML = `⚖️ Srovnání: Oba delikty mají srovnatelnou zákonnou sazbu`;
+      explEl.innerHTML = `Zákoník stanovuje pro oba delikty shodnou horní hranici postihu (${selectedCrime.statutoryText}). Vaše volba <strong>${selectedCrime.name}</strong> odráží specifické posouzení okolností konkrétního případu.`;
+    } else if (lawStrictId === selectedCrime.id) {
+      headingEl.innerHTML = `⚖️ Srovnání se zákonnými sazbami`;
+      explEl.innerHTML = `Zvolili jste <strong>${selectedCrime.name}</strong>, u něhož zákon stanovuje vyšší horní hranici typové sazby (${selectedCrime.statutoryText}) než u deliktu <strong>${otherCrime.name}</strong> (${otherCrime.statutoryText}).`;
     } else {
-      headingEl.innerHTML = `⚠️ Právní řád ČR trestá přísněji druhý delikt`;
-      explEl.innerHTML = `Vybrali jste <strong>${selectedCrime.name}</strong> (${selectedCrime.statutoryText}), avšak české právo stanovuje přísnější postih u <strong>${otherCrime.name}</strong> (${otherCrime.statutoryText}).`;
+      headingEl.innerHTML = `⚖️ Srovnání se zákonnými sazbami`;
+      explEl.innerHTML = `Zvolili jste <strong>${selectedCrime.name}</strong> (${selectedCrime.statutoryText}). České trestní právo stanovuje vyšší horní hranici typové sazby u srovnávaného činu <strong>${otherCrime.name}</strong> (${otherCrime.statutoryText}).`;
     }
 
     resultPanel.classList.add("visible");
@@ -1017,17 +1004,17 @@
 
     if (personaTitleEl && personaDescEl) {
       if (state.totalDilemmasAnswered < 3) {
-        personaTitleEl.textContent = "Začínající soudce";
-        personaDescEl.textContent = "Rozhodněte alespoň 5–10 trestních dilemat, aby systém dokázal přesně vyhodnotit váš rozhodovací profil a míru shody se zákoníkem.";
-      } else if (lawPct >= 75) {
-        personaTitleEl.textContent = "Důsledný legalista";
-        personaDescEl.textContent = "Váš morální a právní úsudek se ve vysoké míře kryje s formálním nastavením českého trestního zákoníku. Přisuzujete vysokou váhu zákonným chráněným zájmům a systematičnosti trestního práva.";
+        personaTitleEl.textContent = "Začínající hodnotitel";
+        personaDescEl.textContent = "Rozhodněte alespoň 5–10 dilemat, aby systém dokázal vyhodnotit váš rozhodovací profil a porovnat jej se zákonnými sazbami a soudní praxi.";
+      } else if (lawPct >= 70) {
+        personaTitleEl.textContent = "Důraz na formální sazby zákona";
+        personaDescEl.textContent = "Ve svých volbách v převážné většině upřednostňujete čin s vyšší zákonnou trestní sazbou. Přisuzujete vysokou váhu zákonným chráněným zájmům a systematičnosti trestního práva.";
       } else if (courtsPct > lawPct) {
-        personaTitleEl.textContent = "Pragmatický soudce z praxe";
-        personaDescEl.textContent = "Při hodnocení zohledňujete reálnou újmu a praktický dopad situace podobně jako soudní senáty v terénu, které často berou v potaz polehčující a přitěžující okolnosti konkrétního skutku.";
+        personaTitleEl.textContent = "Důraz na reálnou soudní praxi";
+        personaDescEl.textContent = "Při hodnocení častěji volíte delikty, u nichž soudy v praxi reálně sahají k nepodmíněným trestům, což zohledňuje praktický dopad a závažnost činů v terénu.";
       } else {
-        personaTitleEl.textContent = "Společenský reformátor";
-        personaDescEl.textContent = "Vaše vnímání závažnosti trestných činů se v některých oblastech odklání od současného znění zákona – např. přísněji vnímáte zásahy do osobní důstojnosti, zranitelných osob nebo naopak hospodářskou kriminalitu velkého rozsahu.";
+        personaTitleEl.textContent = "Individuální etické hodnocení";
+        personaDescEl.textContent = "Vaše volby reflektují specifické vnímání škodlivosti nezávisle na formální sazbě – např. vyšší citlivost na zásahy do osobní integrity, zranitelných osob či zvířat oproti majetkovým deliktům.";
       }
     }
   }

@@ -1244,6 +1244,34 @@ body {
   border-color: var(--accent-primary);
 }
 
+.catalog-methodology-box {
+  background: var(--bg-surface-raised);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-left: 4px solid var(--accent-primary);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.methodology-box-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.catalog-methodology-box p {
+  margin: 0 0 0.5rem;
+}
+
+.catalog-methodology-box p:last-child {
+  margin-bottom: 0;
+}
+
 .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));

@@ -188,8 +188,22 @@
     <!-- ========================================== -->
     <section class="view-section" id="view-catalog">
       <div class="catalog-header">
-        <h2 class="ranking-title">Katalog trestních činů a paragrafů</h2>
+        <h2 class="ranking-title">Katalog trestních činů, přestupků a sazeb</h2>
         <p class="ranking-subtitle">Přehledné vyhledávání v modelových situacích, zákonných sazbách a soudních statistikách.</p>
+      </div>
+
+      <!-- Metodické upozornění k sazbám a trestní minulosti (JakTrestame.cz) -->
+      <div class="catalog-methodology-box">
+        <div class="methodology-box-header">
+          <span style="font-size: 1.25rem;">ℹ️</span>
+          <strong>Metodické upozornění k trestním sazbám a soudní praxi (podle JakTrestame.cz)</strong>
+        </div>
+        <p>
+          Zákonné trestní sazby představují <strong>typové mantinely</strong> (horní a dolní hranici) stanovené zákonodárcem pro danou právní kvalifikaci (výše způsobené škody, spáchání se zbraní či těžší následek).
+        </p>
+        <p>
+          <strong>Reálné ukládání trestů soudy je však zásadně determinováno trestní minulostí pachatele (recidivou):</strong> zatímco u prvotrestaných osob u majetkových a méně závažných činů soudy ukládají převážně podmíněné tresty či peněžité sankce, u opakovaně trestaných recidivistů podíl nepodmíněných trestů vězení prudce narůstá. Uvedené statistiky představují celorepublikový empirický průměr a nenahrazují individuální posouzení konkrétní trestní věci soudem.
+        </p>
       </div>
 
       <div class="catalog-controls">
@@ -222,7 +236,7 @@
     <section class="view-section" id="view-profile">
       <div class="ranking-header">
         <h2 class="ranking-title">Váš profil a statistika rozhodování</h2>
-        <p class="ranking-subtitle">Jak přesně se vaše etické a právní cítění shoduje s českým právním řádem a soudní praxí.</p>
+        <p class="ranking-subtitle">Srovnání vašeho etického a právního hodnocení se zákonnými sazbami a reálnou praxí soudů v ČR.</p>
       </div>
 
       <div class="judge-persona-box">
@@ -241,15 +255,15 @@
         </div>
 
         <div class="stat-kpi-card">
-          <span class="kpi-label">Shoda s Trestním zákoníkem</span>
+          <span class="kpi-label">Volba vyšší zákonné sazby</span>
           <span class="kpi-value" id="kpi-law-match">0 %</span>
-          <span class="kpi-desc">Zvolen čin s vyšší zákonnou horní sazbou</span>
+          <span class="kpi-desc">Podíl voleb činu s vyšší horní sazbou v zákoně</span>
         </div>
 
         <div class="stat-kpi-card">
-          <span class="kpi-label">Shoda se soudní praxí</span>
+          <span class="kpi-label">Volba vyšší soudní přísnosti</span>
           <span class="kpi-value" id="kpi-courts-match">0 %</span>
-          <span class="kpi-desc">Zvolen čin s reálně přísnějším odsuzováním</span>
+          <span class="kpi-desc">Podíl voleb činu s reálně přísnějším odsuzováním</span>
         </div>
       </div>
 
@@ -267,7 +281,7 @@
     <div class="footer-container">
       <div class="footer-info">
         <div>
-          <strong>Trestní Dilemata ČR</strong> — Založeno na zákoně č. 40/2009 Sb. (Trestní zákoník ČR) a otevřených datech justice.
+          <strong>Trestní Dilemata ČR</strong> — Založeno na Trestním zákoníku (z. č. 40/2009 Sb.), zákonu o některých přestupcích (z. č. 251/2016 Sb.), zákonu o silničním provozu (z. č. 361/2000 Sb.) a otevřených datech justice.
         </div>
         <div style="margin-top: 0.35rem; color: var(--text-secondary);">
           Autor: <a href="https://github.com/KarelBerka" target="_blank" rel="noopener" class="footer-link" style="color: var(--accent-primary); font-weight: 600;">Karel Berka</a>
@@ -275,9 +289,10 @@
       </div>
       <div class="footer-sources">
         <span style="color: var(--text-muted); font-weight: 600;">Zdroje:</span>
-        <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link">Zákony pro lidi (TZ 40/2009)</a>
+        <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link">Trestní zákoník</a>
+        <a href="https://www.zakonyprolidi.cz/cs/2016-251" target="_blank" rel="noopener" class="footer-link">Zákon o přestupcích</a>
         <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="footer-link">JakTrestame.cz</a>
-        <a href="https://justice.cz" target="_blank" rel="noopener" class="footer-link">Ministerstvo spravedlnosti ČR</a>
+        <a href="https://justice.cz" target="_blank" rel="noopener" class="footer-link">MSp ČR</a>
         <span style="color: var(--border-medium);">|</span>
         <button type="button" onclick="window.App.openPrivacyModal()" class="footer-link" style="background:none; border:none; padding:0; cursor:pointer; font-size:inherit; font-family:inherit; color:var(--text-secondary);">🛡️ Ochrana soukromí & Cookies</button>
       </div>
@@ -331,8 +346,8 @@
   </div>
 
   <!-- Scripts -->
-  <script src="config.js?v=2.0"></script>
-  <script src="crimes-data.js?v=2.0"></script>
-  <script src="app.js?v=2.0"></script>
+  <script src="config.js?v=2.1"></script>
+  <script src="crimes-data.js?v=2.1"></script>
+  <script src="app.js?v=2.1"></script>
 </body>
 </html>
