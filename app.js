@@ -95,13 +95,17 @@
 
   async function syncWithCloudDatabase() {
     const config = window.TRESTY_CONFIG;
-    if (!config || !config.supabaseUrl || !config.supabaseAnonKey) {
+    if (!config || !config.supabaseUrl || !config.supabaseAnonKey || config.supabaseUrl.includes("vase-id") || config.supabaseUrl === "https://trestnidilemata.supabase.co") {
+      console.info("ℹ️ Supabase URL zatím není nastavena na platné ID projektu. Aplikace běží v lokálním režimu.");
       state.isCloudConnected = false;
+      updateCloudStatusBadge();
       return;
     }
 
     try {
-      const response = await fetch(`${config.supabaseUrl}/rest/v1/crime_stats?select=*`, {
+      // Test spojení dotazem na tabulku votes
+      const response = await fetch(`${config.supabaseUrl}/rest/v1/votes?select=id&limit=1`, {
+        method: "GET",
         headers: {
           "apikey": config.supabaseAnonKey,
           "Authorization": `Bearer ${config.supabaseAnonKey}`
@@ -109,33 +113,28 @@
       });
 
       if (response.ok) {
-        const cloudStats = await response.json();
-        if (Array.isArray(cloudStats) && cloudStats.length > 0) {
-          cloudStats.forEach(row => {
-            if (state.crimeScores[row.crime_id]) {
-              state.crimeScores[row.crime_id].elo = row.elo_rating || state.crimeScores[row.crime_id].elo;
-              state.crimeScores[row.crime_id].wins = row.wins_count || state.crimeScores[row.crime_id].wins;
-              state.crimeScores[row.crime_id].matches = row.matches_count || state.crimeScores[row.crime_id].matches;
-            }
-          });
-          state.isCloudConnected = true;
-          saveStoredScores();
-          updateCloudStatusBadge();
-        }
+        state.isCloudConnected = true;
+        console.log("✅ Úspěšně připojeno k Supabase projektu:", config.supabaseUrl);
+      } else {
+        const errorText = await response.text();
+        console.warn(`⚠️ Supabase vrátilo chybu HTTP ${response.status}:`, errorText);
+        state.isCloudConnected = false;
       }
     } catch (err) {
-      console.warn("Cloudová databáze nedostupná, pokračuji v offline režimu:", err);
+      console.warn("⚠️ Nelze se spojit se Supabase URL (zkontrolujte formát URL v config.js):", err.message);
       state.isCloudConnected = false;
     }
+
+    updateCloudStatusBadge();
   }
 
   async function recordVoteToCloud(winnerId, loserId) {
     const config = window.TRESTY_CONFIG;
-    if (!config || !config.supabaseUrl || !config.supabaseAnonKey) return;
+    if (!config || !config.supabaseUrl || !config.supabaseAnonKey || !state.isCloudConnected) return;
 
     try {
-      // 1. Záznam jednotlivého hlasu do tabulky `votes`
-      fetch(`${config.supabaseUrl}/rest/v1/votes`, {
+      // Záznam jednotlivého hlasu do tabulky `votes`
+      const res = await fetch(`${config.supabaseUrl}/rest/v1/votes`, {
         method: "POST",
         headers: {
           "apikey": config.supabaseAnonKey,
@@ -149,9 +148,13 @@
           session_id: state.sessionId,
           created_at: new Date().toISOString()
         })
-      }).catch(e => console.warn("Chyba při odesílání hlasu do cloudu:", e));
+      });
+
+      if (!res.ok) {
+        console.warn("Chyba při ukládání hlasu do Supabase:", res.status, await res.text());
+      }
     } catch (e) {
-      console.warn("Chyba při komunikaci s cloudem:", e);
+      console.warn("Chyba při odesílání hlasu do cloudu:", e.message);
     }
   }
 
