@@ -8,15 +8,27 @@
   <meta name="description" content="Interaktivní srovnávač závažnosti trestných činů v ČR podle trestního zákoníku a reálné soudní praxe. Otestujte svůj právní a etický úsudek.">
   <title>Trestní Dilemata ČR | Srovnávač trestných činů a soudní praxe</title>
 
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PFKRMMBBPY"></script>
+  <!-- Google tag (gtag.js) with Consent Mode v2 (GDPR) -->
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
 
-    gtag('config', 'G-PFKRMMBBPY');
+    // Výchozí stav pro GDPR: analytické i marketingové cookies jsou zamítnuty před souhlasem
+    const storedConsent = localStorage.getItem('tresty_cookie_consent');
+    gtag('consent', 'default', {
+      'analytics_storage': storedConsent === 'granted' ? 'granted' : 'denied',
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'wait_for_update': 500
+    });
+
+    gtag('js', new Date());
+    gtag('config', 'G-PFKRMMBBPY', {
+      'anonymize_ip': true
+    });
   </script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PFKRMMBBPY"></script>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -266,13 +278,61 @@
         <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link">Zákony pro lidi (TZ 40/2009)</a>
         <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="footer-link">JakTrestame.cz</a>
         <a href="https://justice.cz" target="_blank" rel="noopener" class="footer-link">Ministerstvo spravedlnosti ČR</a>
+        <span style="color: var(--border-medium);">|</span>
+        <button type="button" onclick="window.App.openPrivacyModal()" class="footer-link" style="background:none; border:none; padding:0; cursor:pointer; font-size:inherit; font-family:inherit; color:var(--text-secondary);">🛡️ Ochrana soukromí & Cookies</button>
       </div>
     </div>
   </footer>
 
+  <!-- GDPR Cookie Banner -->
+  <div id="gdpr-cookie-banner" class="cookie-banner" style="display: none;">
+    <div class="cookie-banner-content">
+      <div class="cookie-text">
+        <span class="cookie-icon">🍪</span>
+        <div>
+          <strong>Respektujeme vaše soukromí (GDPR)</strong>
+          <p>Tento web využívá anonymní klientské úložiště pro ukládání voleb v duelech a volitelně Google Analytics pro anonymní měření návštěvnosti. Nesbíráme žádná jména ani osobní data.</p>
+        </div>
+      </div>
+      <div class="cookie-actions">
+        <button type="button" class="btn-secondary" onclick="window.App.handleCookieConsent('denied')" style="padding: 0.45rem 0.85rem; font-size: 0.85rem;">Pouze nezbytné</button>
+        <button type="button" class="btn-primary" onclick="window.App.handleCookieConsent('granted')" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Povolit analytiku</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GDPR Privacy Modal -->
+  <div id="privacy-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 style="margin:0; font-size:1.2rem; font-weight:800; color:var(--text-primary);">🛡️ Zásady ochrany soukromí a Cookies (GDPR)</h3>
+        <button type="button" class="modal-close-btn" onclick="window.App.closePrivacyModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="font-size:0.88rem; line-height:1.6; color:var(--text-secondary);">
+        <p>Aplikace <strong>Trestní Dilemata ČR</strong> respektuje soukromí uživatelů a je provozována v souladu s Nařízením Evropského parlamentu a Rady (EU) 2016/679 (GDPR) a zákonem č. 127/2005 Sb., o elektronických komunikacích.</p>
+        
+        <h4 style="color:var(--text-primary); margin: 1rem 0 0.3rem;">1. Jaká data a za jakým účelem zpracováváme?</h4>
+        <ul style="margin:0 0 1rem 1.25rem; padding:0;">
+          <li><strong>Hlasy v duelech:</strong> Výsledky posouzení závažnosti trestných činů a přestupků. Slouží výhradně pro statistické srovnání a akademický výzkum.</li>
+          <li><strong>Anonymní identifikátor relace (Session ID):</strong> Náhodně vygenerovaný řetězec v <code>localStorage</code> prohlížeče (např. <code>usr_...</code>). Neslouží k identifikaci osoby, ale pouze k agregaci vašeho profilu v aplikaci.</li>
+          <li><strong>Měření návštěvnosti (Google Analytics 4):</strong> Pouze pokud udělíte souhlas. Zpracovává agregované statistiky s anonymizovanou IP adresou.</li>
+        </ul>
+
+        <h4 style="color:var(--text-primary); margin: 1rem 0 0.3rem;">2. Správce dat</h4>
+        <p style="margin:0 0 1rem;">Správcem dat je autor projektu <strong>Karel Berka</strong> (<a href="https://github.com/KarelBerka" target="_blank" rel="noopener" style="color:var(--accent-primary);">GitHub profil</a>).</p>
+
+        <h4 style="color:var(--text-primary); margin: 1rem 0 0.4rem;">3. Nastavení vašeho souhlasu</h4>
+        <div style="display:flex; gap:0.6rem; align-items:center; flex-wrap:wrap; margin-top:0.5rem;">
+          <button type="button" class="btn-secondary" onclick="window.App.handleCookieConsent('denied'); window.App.closePrivacyModal();" style="padding:0.45rem 0.85rem; font-size:0.85rem;">Pouze nezbytné</button>
+          <button type="button" class="btn-primary" onclick="window.App.handleCookieConsent('granted'); window.App.closePrivacyModal();" style="padding:0.45rem 1rem; font-size:0.85rem;">Povolit analytické cookies</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
-  <script src="config.js?v=1.9"></script>
-  <script src="crimes-data.js?v=1.9"></script>
-  <script src="app.js?v=1.9"></script>
+  <script src="config.js?v=2.0"></script>
+  <script src="crimes-data.js?v=2.0"></script>
+  <script src="app.js?v=2.0"></script>
 </body>
 </html>

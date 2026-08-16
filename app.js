@@ -1108,6 +1108,44 @@
     // Event listenery pro vyhledávání a filtrování v katalogu
     document.getElementById("catalog-search-input")?.addEventListener("input", renderCatalogView);
     document.getElementById("catalog-category-select")?.addEventListener("change", renderCatalogView);
+
+    // GDPR Cookie lišta
+    initCookieBanner();
+  }
+
+  // =========================================================================
+  // GDPR & SPRÁVA SOUHLASU S COOKIES
+  // =========================================================================
+
+  function initCookieBanner() {
+    const consent = localStorage.getItem("tresty_cookie_consent");
+    const banner = document.getElementById("gdpr-cookie-banner");
+    if (!consent && banner) {
+      banner.style.display = "block";
+    }
+  }
+
+  function handleCookieConsent(choice) {
+    localStorage.setItem("tresty_cookie_consent", choice);
+    
+    if (typeof window.gtag === "function") {
+      window.gtag("consent", "update", {
+        "analytics_storage": choice === "granted" ? "granted" : "denied"
+      });
+    }
+
+    const banner = document.getElementById("gdpr-cookie-banner");
+    if (banner) banner.style.display = "none";
+  }
+
+  function openPrivacyModal() {
+    const modal = document.getElementById("privacy-modal");
+    if (modal) modal.style.display = "flex";
+  }
+
+  function closePrivacyModal() {
+    const modal = document.getElementById("privacy-modal");
+    if (modal) modal.style.display = "none";
   }
 
   function resetUserStats() {
@@ -1130,7 +1168,10 @@
     setRankingViewMode,
     highlightCrimeFlow,
     resetCrimeFlow,
-    resetUserStats
+    resetUserStats,
+    handleCookieConsent,
+    openPrivacyModal,
+    closePrivacyModal
   };
 
   if (document.readyState === "loading") {
