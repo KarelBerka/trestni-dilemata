@@ -4,7 +4,7 @@
 
 window.TRESTY_CONFIG = {
   // URL vašeho Supabase projektu (např. 'https://<project-ref>.supabase.co')
-  supabaseUrl: "https://trestnidilemata.supabase.co", 
+  supabaseUrl: "https://byvjqnbpltjwcluigkfj.supabase.co", 
 
   // Váš Publishable API klíč ze Supabase
   supabaseAnonKey: "sb_publishable_IMAMxmi6B1ui_CposyQnGA_G_wZPVcd",
