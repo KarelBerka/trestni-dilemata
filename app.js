@@ -734,13 +734,24 @@
     document.getElementById("catalog-category-select")?.addEventListener("change", renderCatalogView);
   }
 
+  function resetUserStats() {
+    state.totalDilemmasAnswered = 0;
+    state.agreedWithLawCount = 0;
+    state.agreedWithCourtsCount = 0;
+    saveStoredStats();
+    renderProfileView();
+    updateDuelCounter();
+    loadNewDuel();
+  }
+
   // Export do window.App
   window.App = {
     init,
     handleVote,
     loadNewDuel,
     switchTab,
-    setRankingSort
+    setRankingSort,
+    resetUserStats
   };
 
   if (document.readyState === "loading") {
