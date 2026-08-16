@@ -648,17 +648,19 @@
 
     // Rozměry pro SVG graf
     const rowH = 38;
-    const topPadding = 90;
-    const svgWidth = 1120;
+    const topPadding = 105;
+    const svgWidth = 1140;
     const svgHeight = topPadding + (totalCrimes * rowH) + 30;
 
     const xP_text = 240;
     const xP_dot = 260;
     const xL_dotIn = 410;
-    const xL_text = 540;
-    const xL_dotOut = 670;
-    const xC_dot = 820;
-    const xC_text = 840;
+    const xL_text = 550;
+    const xL_dotOut = 690;
+    const xC_dot = 840;
+    const xC_text = 860;
+
+    const totalVotes = Math.round(Object.values(state.crimeScores).reduce((sum, s) => sum + (s.matches || 0), 0) / 2);
 
     const categoryColors = {
       ZivotZdravi: "#f43f5e",
@@ -675,17 +677,27 @@
     }
 
     let svgHtml = `
-      <svg class="flow-svg-canvas" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMidYMid meet">
-        <!-- Sloupcové hlavičky -->
+      <svg class="flow-svg-canvas" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+        <!-- Sloupcové hlavičky s vysvětlivkami a odkazy -->
         <g class="flow-headers">
-          <rect x="20" y="15" width="300" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-          <text x="170" y="41" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">👥 1. Hlasování veřejnosti (Elo)</text>
+          <!-- 1. Veřejnost -->
+          <rect x="20" y="15" width="300" height="58" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+          <text x="170" y="37" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">👥 1. Hlasování veřejnosti</text>
+          <text x="170" y="58" fill="#94a3b8" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif">Počet duelů: ${totalVotes} hlasů (Elo)</text>
 
-          <rect x="385" y="15" width="310" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-          <text x="540" y="41" fill="#fbbf24" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">⚖️ 2. Trestní zákoník ČR (Sazba)</text>
+          <!-- 2. Trestní zákoník -->
+          <a xlink:href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank">
+            <rect x="390" y="15" width="320" height="58" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" style="cursor:pointer;"/>
+            <text x="550" y="37" fill="#fbbf24" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif" style="cursor:pointer;">⚖️ 2. Trestní zákoník ČR</text>
+            <text x="550" y="58" fill="#facc15" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif" style="text-decoration:underline; cursor:pointer;">Zákon č. 40/2009 Sb. ↗</text>
+          </a>
 
-          <rect x="760" y="15" width="340" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-          <text x="930" y="41" fill="#34d399" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">🏛️ 3. Reálná soudní praxe</text>
+          <!-- 3. Soudní praxe -->
+          <a xlink:href="https://jaktrestame.cz" target="_blank">
+            <rect x="780" y="15" width="340" height="58" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" style="cursor:pointer;"/>
+            <text x="950" y="37" fill="#34d399" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif" style="cursor:pointer;">🏛️ 3. Reálná soudní praxe</text>
+            <text x="950" y="58" fill="#34d399" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif" style="text-decoration:underline; cursor:pointer;">Otevřená data JakTrestame.cz ↗</text>
+          </a>
         </g>
 
         <!-- Vodící vertikální čáry pro přehlednost -->
@@ -760,6 +772,7 @@
     `;
 
     svgContainer.innerHTML = svgHtml;
+    resetCrimeFlow();
   }
 
   function highlightCrimeFlow(crimeId) {
@@ -847,7 +860,18 @@
 
     const tooltipBox = document.getElementById("flow-hover-tooltip-box");
     if (tooltipBox) {
-      tooltipBox.innerHTML = `<span>💡 Najeďte kurzorem na delikt nebo linii pro zvýraznění jeho toku napříč všemi 3 žebříčky.</span>`;
+      const totalVotes = Math.round(Object.values(state.crimeScores).reduce((sum, s) => sum + (s.matches || 0), 0) / 2);
+      tooltipBox.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:0.5rem; font-size:0.85rem;">
+          <div>
+            <strong style="color:var(--text-primary);">Vysvětlivky sloupců:</strong> 
+            <span style="color:#38bdf8; font-weight:600;">👥 Veřejnost (${totalVotes} duelů)</span> • 
+            <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link" style="color:#fbbf24; font-weight:600; text-decoration:underline;">⚖️ Trestní zákoník ČR (z. č. 40/2009 Sb.) ↗</a> • 
+            <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="footer-link" style="color:#34d399; font-weight:600; text-decoration:underline;">🏛️ Soudní praxe (JakTrestame.cz) ↗</a>
+          </div>
+          <span style="color:var(--text-muted); font-style:italic;">💡 Najeďte myší na delikt pro zvýraznění toku</span>
+        </div>
+      `;
     }
   }
 
