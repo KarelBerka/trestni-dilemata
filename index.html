@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interaktivní srovnávač závažnosti trestných činů v ČR podle trestního zákoníku a reálné soudní praxe. Otestujte svůj právní a etický úsudek.">
+  <title>Trestní Dilemata ČR | Srovnávač trestných činů a soudní praxe</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand" onclick="window.App.switchTab('view-duel')">
+        <div class="brand-icon">⚖️</div>
+        <div class="brand-title">
+          Trestní Dilemata
+          <span class="brand-badge">ČR 40/2009 Sb.</span>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Hlavní navigace">
+        <button class="nav-tab active" data-target="view-duel" id="nav-duel-btn">
+          <span class="tab-icon">⚔️</span>
+          <span>Dilema & Duel</span>
+        </button>
+        <button class="nav-tab" data-target="view-ranking" id="nav-ranking-btn">
+          <span class="tab-icon">📊</span>
+          <span>Žebříček činů</span>
+        </button>
+        <button class="nav-tab" data-target="view-catalog" id="nav-catalog-btn">
+          <span class="tab-icon">📖</span>
+          <span>Katalog zákoníku</span>
+        </button>
+        <button class="nav-tab" data-target="view-profile" id="nav-profile-btn">
+          <span class="tab-icon">👤</span>
+          <span>Profil soudce</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-main">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: DUEL ARENA                         -->
+    <!-- ========================================== -->
+    <section class="view-section active" id="view-duel">
+      <div class="arena-hero">
+        <h1 class="arena-title">Který trestný čin je závažnější?</h1>
+        <p class="arena-subtitle">
+          Porovnejte dva činy a zvolte, který by měl být potrestán přísněji. Systém páruje činy s podobnou závažností pro vyrovnaná morálně-právní dilemata.
+        </p>
+      </div>
+
+      <div class="duel-controls-bar">
+        <div class="progress-pill">
+          <span>Vyřešená dilemata:</span>
+          <span class="count" id="duel-counter-val">0</span>
+        </div>
+
+        <div id="cloud-status-badge" style="font-size:0.8rem; font-weight:600; padding:0.3rem 0.75rem; border-radius:9999px; background:var(--bg-surface); border:1px solid var(--border-subtle); cursor:default;">
+          💾 Lokální režim
+        </div>
+
+        <div class="keyboard-hint">
+          <span>Klávesové zkratky:</span>
+          <kbd class="kbd">← / 1</kbd> vlevo, 
+          <kbd class="kbd">→ / 2</kbd> vpravo, 
+          <kbd class="kbd">Mezerník</kbd> další
+        </div>
+      </div>
+
+      <!-- Duel Matchup Grid (Dynamically rendered) -->
+      <div id="duel-arena">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Matchup Result & Reveal Panel -->
+      <div class="matchup-result-panel" id="matchup-result-panel">
+        <div class="result-panel-content">
+          <div class="result-verdict-summary">
+            <h3 class="verdict-heading" id="verdict-heading-text">Výsledek porovnání</h3>
+            <p class="verdict-explanation" id="verdict-explanation-text">Popis shody se zákonem...</p>
+          </div>
+          <div class="result-actions">
+            <button class="btn-primary" id="btn-next-duel" type="button">
+              <span>Další dilema</span>
+              <kbd class="kbd" style="background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.2); color:#fff;">Space ↵</kbd>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: RANKING & LEADERBOARD              -->
+    <!-- ========================================== -->
+    <section class="view-section" id="view-ranking">
+      <div class="ranking-header">
+        <h2 class="ranking-title">Žebříček závažnosti trestných činů</h2>
+        <p class="ranking-subtitle">Srovnání vnímání veřejnosti s maximálními sazbami v zákoníku a reálnou praxí soudů v ČR.</p>
+      </div>
+
+      <div class="ranking-filters">
+        <div class="ranking-toggle-group">
+          <button class="ranking-toggle-btn active" data-sort="userVotes">👥 Podle hlasování veřejnosti (Elo)</button>
+          <button class="ranking-toggle-btn" data-sort="statutory">⚖️ Podle Trestního zákoníku (Sazba)</button>
+          <button class="ranking-toggle-btn" data-sort="courtSentence">🏛️ Podle reálné praxe soudů</button>
+        </div>
+      </div>
+
+      <div class="ranking-list" id="ranking-list-container">
+        <!-- Dynamically rendered ranking items -->
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW 3: CATALOG & ENCYCLOPEDIA             -->
+    <!-- ========================================== -->
+    <section class="view-section" id="view-catalog">
+      <div class="catalog-header">
+        <h2 class="ranking-title">Katalog trestních činů a paragrafů</h2>
+        <p class="ranking-subtitle">Přehledné vyhledávání v modelových situacích, zákonných sazbách a soudních statistikách.</p>
+      </div>
+
+      <div class="catalog-controls">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="catalog-search-input" class="search-input" placeholder="Hledat podle názvu, paragrafu (§) nebo klíčového slova...">
+        </div>
+
+        <select id="catalog-category-select" class="category-select" aria-label="Filtrovat kategorii">
+          <option value="all">Všechny kategorie</option>
+          <option value="ZivotZdravi">Život a zdraví</option>
+          <option value="SvobodaDostojnost">Svoboda a důstojnost</option>
+          <option value="Majetek">Majetek</option>
+          <option value="Hospodarske">Hospodářské činy</option>
+          <option value="VerejnyPoradek">Veřejný pořádek</option>
+          <option value="DopravaZivotniProstredi">Doprava a prostředí</option>
+        </select>
+      </div>
+
+      <div class="catalog-grid" id="catalog-grid-container">
+        <!-- Dynamically rendered catalog cards -->
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW 4: USER PROFILE & STATS               -->
+    <!-- ========================================== -->
+    <section class="view-section" id="view-profile">
+      <div class="ranking-header">
+        <h2 class="ranking-title">Váš profil a statistika rozhodování</h2>
+        <p class="ranking-subtitle">Jak přesně se vaše etické a právní cítění shoduje s českým právním řádem a soudní praxí.</p>
+      </div>
+
+      <div class="judge-persona-box">
+        <div class="judge-avatar">🏛️</div>
+        <div class="judge-info">
+          <h3 id="persona-title">Hodnocení se připravuje...</h3>
+          <p id="persona-desc">Rozhodněte několik dilemat v duelu pro vygenerování vašeho rozhodovacího profilu.</p>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-kpi-card">
+          <span class="kpi-label">Vyřešená dilemata</span>
+          <span class="kpi-value" id="kpi-total-dilemmas">0</span>
+          <span class="kpi-desc">Celkový počet posouzených dvojic</span>
+        </div>
+
+        <div class="stat-kpi-card">
+          <span class="kpi-label">Shoda s Trestním zákoníkem</span>
+          <span class="kpi-value" id="kpi-law-match">0 %</span>
+          <span class="kpi-desc">Zvolen čin s vyšší zákonnou horní sazbou</span>
+        </div>
+
+        <div class="stat-kpi-card">
+          <span class="kpi-label">Shoda se soudní praxí</span>
+          <span class="kpi-value" id="kpi-courts-match">0 %</span>
+          <span class="kpi-desc">Zvolen čin s reálně přísnějším odsuzováním</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div>
+        <strong>Trestní Dilemata ČR</strong> — Založeno na zákoně č. 40/2009 Sb. (Trestní zákoník ČR) a otevřených datech justice.
+      </div>
+      <div class="footer-sources">
+        <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link">Zákony pro lidi (TZ 40/2009)</a>
+        <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="footer-link">JakTrestame.cz</a>
+        <a href="https://justice.cz" target="_blank" rel="noopener" class="footer-link">Ministerstvo spravedlnosti ČR</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="crimes-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

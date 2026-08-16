@@ -1,0 +1,4 @@
+# Reference PDFs & Large files
+*.pdf
+.DS_Store
+Thumbs.db
