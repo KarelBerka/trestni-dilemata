@@ -1088,6 +1088,7 @@
   async function init() {
     await loadStoredData();
     loadNewDuel();
+    renderRankingView();
     initKeyboardNavigation();
     updateCloudStatusBadge();
 
