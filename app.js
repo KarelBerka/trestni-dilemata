@@ -17,7 +17,7 @@
     agreedWithCourtsCount: 0,
     categoryFilter: "all",
     rankingSortMode: "userVotes", // 'userVotes', 'statutory', 'courtSentence'
-    rankingViewMode: "list", // 'list' (klasický seznam - výchozí) nebo 'flow' (SVG flow graf)
+    rankingViewMode: "flow", // 'flow' (SVG flow graf - výchozí) nebo 'list' (klasický seznam)
     sessionId: null,
     isCloudConnected: false,
     // Elo a skóre činů
@@ -533,11 +533,7 @@
   // =========================================================================
 
   function renderRankingView() {
-    if (state.rankingViewMode === "flow") {
-      renderFlowBumpChart();
-    } else {
-      renderRankingListView();
-    }
+    setRankingViewMode(state.rankingViewMode || "flow");
   }
 
   function setRankingViewMode(mode) {
