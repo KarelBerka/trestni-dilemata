@@ -110,19 +110,39 @@
     <!-- ========================================== -->
     <section class="view-section" id="view-ranking">
       <div class="ranking-header">
-        <h2 class="ranking-title">Žebříček závažnosti trestných činů</h2>
-        <p class="ranking-subtitle">Srovnání vnímání veřejnosti s maximálními sazbami v zákoníku a reálnou praxí soudů v ČR.</p>
+        <h2 class="ranking-title">Žebříček závažnosti deliktů a srovnání</h2>
+        <p class="ranking-subtitle">Grafické i tabulkové porovnání vnímání veřejnosti (Elo), horní hranice trestní sazby a reálné soudní praxe v ČR.</p>
       </div>
 
       <div class="ranking-filters">
-        <div class="ranking-toggle-group">
-          <button class="ranking-toggle-btn active" data-sort="userVotes">👥 Podle hlasování veřejnosti (Elo)</button>
-          <button class="ranking-toggle-btn" data-sort="statutory">⚖️ Podle Trestního zákoníku (Sazba)</button>
-          <button class="ranking-toggle-btn" data-sort="courtSentence">🏛️ Podle reálné praxe soudů</button>
+        <div class="comparison-view-toggle">
+          <button class="comp-view-btn active" id="btn-view-matrix" data-view="matrix">
+            <span>📊 Grafické srovnání 3 variant</span>
+          </button>
+          <button class="comp-view-btn" id="btn-view-list" data-view="list">
+            <span>📋 Seznam deliktů s řazením</span>
+          </button>
+        </div>
+
+        <div class="ranking-toggle-group" id="ranking-sort-controls" style="display: none;">
+          <button class="ranking-toggle-btn active" data-sort="userVotes">👥 Veřejnost (Elo)</button>
+          <button class="ranking-toggle-btn" data-sort="statutory">⚖️ Trestní zákoník</button>
+          <button class="ranking-toggle-btn" data-sort="courtSentence">🏛️ Soudní praxe</button>
         </div>
       </div>
 
-      <div class="ranking-list" id="ranking-list-container">
+      <!-- INSIGHTS CARDS (PARADOXY) -->
+      <div class="insights-summary-grid" id="ranking-insights-container">
+        <!-- Dynamically rendered insights -->
+      </div>
+
+      <!-- GRAFICKÁ SROVNÁVACÍ MATICE -->
+      <div class="comparison-matrix-container" id="ranking-matrix-container">
+        <!-- Dynamically rendered matrix -->
+      </div>
+
+      <!-- KLASICKÝ SEZNAM -->
+      <div class="ranking-list" id="ranking-list-container" style="display: none;">
         <!-- Dynamically rendered ranking items -->
       </div>
     </section>
@@ -228,8 +248,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="config.js?v=1.4"></script>
-  <script src="crimes-data.js?v=1.4"></script>
-  <script src="app.js?v=1.4"></script>
+  <script src="config.js?v=1.5"></script>
+  <script src="crimes-data.js?v=1.5"></script>
+  <script src="app.js?v=1.5"></script>
 </body>
 </html>

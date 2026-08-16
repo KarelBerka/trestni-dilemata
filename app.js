@@ -17,6 +17,7 @@
     agreedWithCourtsCount: 0,
     categoryFilter: "all",
     rankingSortMode: "userVotes", // 'userVotes', 'statutory', 'courtSentence'
+    rankingViewMode: "matrix", // 'matrix' (grafické srovnání) nebo 'list' (klasický seznam)
     sessionId: null,
     isCloudConnected: false,
     // Elo a skóre činů
@@ -527,7 +528,204 @@
   // ŽEBŘÍČEK ČINŮ (RANKING)
   // =========================================================================
 
+  // =========================================================================
+  // ŽEBŘÍČEK & GRAFICKÉ SROVNÁNÍ 3 VARIANT
+  // =========================================================================
+
   function renderRankingView() {
+    if (state.rankingViewMode === "matrix") {
+      renderComparisonMatrix();
+    } else {
+      renderRankingListView();
+    }
+  }
+
+  function setRankingViewMode(mode) {
+    state.rankingViewMode = mode;
+    
+    const btnMatrix = document.getElementById("btn-view-matrix");
+    const btnList = document.getElementById("btn-view-list");
+    const sortControls = document.getElementById("ranking-sort-controls");
+    const matrixContainer = document.getElementById("ranking-matrix-container");
+    const insightsContainer = document.getElementById("ranking-insights-container");
+    const listContainer = document.getElementById("ranking-list-container");
+
+    if (btnMatrix) btnMatrix.classList.toggle("active", mode === "matrix");
+    if (btnList) btnList.classList.toggle("active", mode === "list");
+
+    if (mode === "matrix") {
+      if (sortControls) sortControls.style.display = "none";
+      if (insightsContainer) insightsContainer.style.display = "grid";
+      if (matrixContainer) matrixContainer.style.display = "flex";
+      if (listContainer) listContainer.style.display = "none";
+      renderComparisonMatrix();
+    } else {
+      if (sortControls) sortControls.style.display = "flex";
+      if (insightsContainer) insightsContainer.style.display = "none";
+      if (matrixContainer) matrixContainer.style.display = "none";
+      if (listContainer) listContainer.style.display = "flex";
+      renderRankingListView();
+    }
+  }
+
+  function renderComparisonMatrix() {
+    const matrixContainer = document.getElementById("ranking-matrix-container");
+    const insightsContainer = document.getElementById("ranking-insights-container");
+    if (!matrixContainer || !insightsContainer) return;
+
+    const crimes = [...window.CRIMES_DATA];
+
+    // 1. Pořadí podle Veřejnosti (Elo)
+    const publicSorted = [...crimes].sort((a, b) => getCrimeScore(b.id).elo - getCrimeScore(a.id).elo);
+    const publicRanks = {};
+    publicSorted.forEach((c, idx) => { publicRanks[c.id] = idx + 1; });
+
+    // 2. Pořadí podle Trestního zákoníku (Sazba)
+    const lawSorted = [...crimes].sort((a, b) => {
+      const isPrestA = a.delictType === "prestupek";
+      const isPrestB = b.delictType === "prestupek";
+      if (!isPrestA && isPrestB) return -1;
+      if (isPrestA && !isPrestB) return 1;
+      if (isPrestA && isPrestB) return (b.statutoryFineMaxKc || 0) - (a.statutoryFineMaxKc || 0);
+      if (b.statutoryMaxYears !== a.statutoryMaxYears) return b.statutoryMaxYears - a.statutoryMaxYears;
+      return (b.statutoryMinYears || 0) - (a.statutoryMinYears || 0);
+    });
+    const lawRanks = {};
+    lawSorted.forEach((c, idx) => { lawRanks[c.id] = idx + 1; });
+
+    // 3. Pořadí podle Soudní praxe
+    const courtsSorted = [...crimes].sort((a, b) => {
+      const aVal = (a.courtStats.unconditionalPrisonPct * 0.6) + (a.courtStats.avgPrisonSentenceMonths * 1.5) + (a.harmAnalysis.harmScore * 0.2);
+      const bVal = (b.courtStats.unconditionalPrisonPct * 0.6) + (b.courtStats.avgPrisonSentenceMonths * 1.5) + (b.harmAnalysis.harmScore * 0.2);
+      return bVal - aVal;
+    });
+    const courtsRanks = {};
+    courtsSorted.forEach((c, idx) => { courtsRanks[c.id] = idx + 1; });
+
+    // Sestavení srovnávacího seznamu řazeného podle veřejného Elo
+    const comparisonList = [...crimes].map(crime => {
+      const pRank = publicRanks[crime.id];
+      const lRank = lawRanks[crime.id];
+      const cRank = courtsRanks[crime.id];
+      const delta = lRank - pRank; // Kladné = veřejnost trestá přísněji než zákon
+      return { crime, pRank, lRank, cRank, delta };
+    }).sort((a, b) => a.pRank - b.pRank);
+
+    // Identifikace paradoxů
+    const maxStricterPublic = [...comparisonList].sort((a, b) => b.delta - a.delta)[0];
+    const maxStricterLaw = [...comparisonList].sort((a, b) => a.delta - b.delta)[0];
+    const bestConsensus = [...comparisonList].sort((a, b) => Math.abs(a.delta) - Math.abs(b.delta))[0];
+
+    // Vykreslení insight karet
+    insightsContainer.innerHTML = `
+      <div class="insight-card" style="border-left: 4px solid #f43f5e;">
+        <div class="insight-card-header" style="color: #f43f5e;">
+          <span>🚨 Veřejnost přísnější než zákon</span>
+        </div>
+        <div class="insight-card-title">${maxStricterPublic.crime.name}</div>
+        <div class="insight-card-desc">
+          Lidé tento delikt řadí na <strong>#${maxStricterPublic.pRank}. příčku</strong>, zatímco zákoník až na <strong>#${maxStricterPublic.lRank}. místo</strong> (veřejný posun o +${maxStricterPublic.delta} pozic přísněji).
+        </div>
+      </div>
+
+      <div class="insight-card" style="border-left: 4px solid #38bdf8;">
+        <div class="insight-card-header" style="color: #38bdf8;">
+          <span>🏛️ Zákon přísnější než veřejnost</span>
+        </div>
+        <div class="insight-card-title">${maxStricterLaw.crime.name}</div>
+        <div class="insight-card-desc">
+          Zákoník stanovuje přísnou sazbu na <strong>#${maxStricterLaw.lRank}. místě</strong>, avšak veřejnost čin vnímá relativně mírněji na <strong>#${maxStricterLaw.pRank}. místě</strong> (o ${Math.abs(maxStricterLaw.delta)} příček).
+        </div>
+      </div>
+
+      <div class="insight-card" style="border-left: 4px solid #34d399;">
+        <div class="insight-card-header" style="color: #34d399;">
+          <span>⚖️ Nejvyšší vzájemná shoda</span>
+        </div>
+        <div class="insight-card-title">${bestConsensus.crime.name}</div>
+        <div class="insight-card-desc">
+          Absolutní shoda napříč společností: <strong>#${bestConsensus.pRank}. u lidí</strong>, <strong>#${bestConsensus.lRank}. v zákoníku</strong> a <strong>#${bestConsensus.cRank}. u soudů</strong>.
+        </div>
+      </div>
+    `;
+
+    // Vykreslení srovnávací matice
+    let matrixHtml = `
+      <div class="matrix-header-row">
+        <div>Delikt / Skutek</div>
+        <div>👥 Veřejnost (Elo)</div>
+        <div>⚖️ Trestní zákoník</div>
+        <div>🏛️ Soudní praxe</div>
+        <div>Odchylka</div>
+      </div>
+    `;
+
+    const totalCrimes = crimes.length;
+
+    comparisonList.forEach(item => {
+      const { crime, pRank, lRank, cRank, delta } = item;
+      const isPrest = crime.delictType === "prestupek";
+      const scoreObj = getCrimeScore(crime.id);
+
+      const widthPub = Math.max(12, Math.round(((totalCrimes - pRank + 1) / totalCrimes) * 100));
+      const widthLaw = Math.max(12, Math.round(((totalCrimes - lRank + 1) / totalCrimes) * 100));
+      const widthCourts = Math.max(12, Math.round(((totalCrimes - cRank + 1) / totalCrimes) * 100));
+
+      let deltaTag = "";
+      if (delta >= 4) {
+        deltaTag = `<span class="delta-badge stricter-public" title="Veřejnost hodnotí o ${delta} příček přísněji než zákon">▲ +${delta} přísnější</span>`;
+      } else if (delta <= -4) {
+        deltaTag = `<span class="delta-badge milder-public" title="Veřejnost hodnotí o ${Math.abs(delta)} příček mírněji než zákon">▼ ${delta} mírnější</span>`;
+      } else {
+        deltaTag = `<span class="delta-badge balanced" title="Shoda vnímání s nastavením zákona">✓ Shoda</span>`;
+      }
+
+      matrixHtml += `
+        <div class="matrix-item-row">
+          <div class="matrix-crime-info">
+            <div class="matrix-crime-name">${crime.name}</div>
+            <div class="matrix-crime-meta">${isPrest ? '⚡ Přestupek' : '⚖️ ' + crime.paragraph}</div>
+          </div>
+
+          <div class="matrix-col-stat">
+            <div class="rank-badge-wrap">
+              <span class="rank-badge public">#${pRank}</span>
+              <span class="mini-score-val">${Math.round(scoreObj.elo || 1000)} Elo</span>
+            </div>
+            <div class="matrix-bar-track">
+              <div class="matrix-bar-fill public" style="width: ${widthPub}%;"></div>
+            </div>
+          </div>
+
+          <div class="matrix-col-stat">
+            <div class="rank-badge-wrap">
+              <span class="rank-badge law">#${lRank}</span>
+              <span class="mini-score-val">${isPrest ? 'Pokuta' : crime.statutoryMaxYears + ' let'}</span>
+            </div>
+            <div class="matrix-bar-track">
+              <div class="matrix-bar-fill law" style="width: ${widthLaw}%;"></div>
+            </div>
+          </div>
+
+          <div class="matrix-col-stat">
+            <div class="rank-badge-wrap">
+              <span class="rank-badge courts">#${cRank}</span>
+              <span class="mini-score-val">${isPrest ? 'Správní' : crime.courtStats.unconditionalPrisonPct + ' % vězení'}</span>
+            </div>
+            <div class="matrix-bar-track">
+              <div class="matrix-bar-fill courts" style="width: ${widthCourts}%;"></div>
+            </div>
+          </div>
+
+          <div>${deltaTag}</div>
+        </div>
+      `;
+    });
+
+    matrixContainer.innerHTML = matrixHtml;
+  }
+
+  function renderRankingListView() {
     const container = document.getElementById("ranking-list-container");
     if (!container) return;
 
@@ -540,7 +738,14 @@
         return scoreB - scoreA;
       });
     } else if (state.rankingSortMode === "statutory") {
-      crimes.sort((a, b) => b.statutoryMaxYears - a.statutoryMaxYears);
+      crimes.sort((a, b) => {
+        const isPrestA = a.delictType === "prestupek";
+        const isPrestB = b.delictType === "prestupek";
+        if (!isPrestA && isPrestB) return -1;
+        if (isPrestA && !isPrestB) return 1;
+        if (isPrestA && isPrestB) return (b.statutoryFineMaxKc || 0) - (a.statutoryFineMaxKc || 0);
+        return b.statutoryMaxYears - a.statutoryMaxYears;
+      });
     } else if (state.rankingSortMode === "courtSentence") {
       crimes.sort((a, b) => {
         const aVal = (a.courtStats.unconditionalPrisonPct * 0.6) + (a.courtStats.avgPrisonSentenceMonths * 1.5);
@@ -587,7 +792,7 @@
     document.querySelectorAll(".ranking-toggle-btn").forEach(btn => {
       btn.classList.toggle("active", btn.dataset.sort === mode);
     });
-    renderRankingView();
+    renderRankingListView();
   }
 
   // =========================================================================
@@ -744,6 +949,10 @@
     // Event listener pro další dilema
     document.getElementById("btn-next-duel")?.addEventListener("click", loadNewDuel);
 
+    // Event listenery pro přepínání režimu žebříčku (Matice vs Seznam)
+    document.getElementById("btn-view-matrix")?.addEventListener("click", () => setRankingViewMode("matrix"));
+    document.getElementById("btn-view-list")?.addEventListener("click", () => setRankingViewMode("list"));
+
     // Event listenery pro řazení v žebříčku
     document.querySelectorAll(".ranking-toggle-btn").forEach(btn => {
       btn.addEventListener("click", () => setRankingSort(btn.dataset.sort));
@@ -771,6 +980,7 @@
     loadNewDuel,
     switchTab,
     setRankingSort,
+    setRankingViewMode,
     resetUserStats
   };
 
