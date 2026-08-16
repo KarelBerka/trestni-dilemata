@@ -238,33 +238,34 @@
     return `
       <div class="crime-card" id="card-${crime.id}" data-crime-id="${crime.id}" onclick="window.App.handleVote('${crime.id}')">
         <div class="card-header-meta">
-          <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
-            ${typeBadge}
-            <span class="card-category-badge">
-              ${crime.categoryLabel}
-            </span>
-          </div>
-          <span class="card-option-tag">Možnost ${sideLetter} (${kbdKey})</span>
+          <span class="card-option-tag" style="font-size:0.85rem; padding:0.25rem 0.65rem;">Případ ${sideLetter} (${kbdKey})</span>
         </div>
 
-        <h3 class="card-title">${crime.name}</h3>
-        <div class="card-paragraph">${crime.paragraph}</div>
-
-        <div class="card-scenario-box">
+        <div class="card-scenario-box" style="margin-top:0.5rem;">
           <div class="scenario-label">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            Modelový případ
+            Popis skutku
           </div>
-          <p class="scenario-text">${crime.scenario}</p>
+          <p class="scenario-text" style="font-size: 1rem; line-height: 1.6;">${crime.scenario}</p>
         </div>
 
         <button class="card-cta-btn" type="button">
-          <span>Tento delikt je závažnější</span>
+          <span>Tento čin je závažnější</span>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
 
         <div class="reveal-container" id="reveal-${crime.id}">
           <div class="verdict-tag-placeholder" id="verdict-tag-${crime.id}"></div>
+
+          <!-- Právní kvalifikace odhalená až po hlasování -->
+          <div style="background: var(--bg-surface-raised); border: 1px solid var(--border-medium); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1rem;">
+            <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap; margin-bottom: 0.5rem;">
+              ${typeBadge}
+              <span class="card-category-badge">${crime.categoryLabel}</span>
+            </div>
+            <h3 class="card-title" style="margin-bottom:0.2rem; font-size:1.25rem;">${crime.name}</h3>
+            <div class="card-paragraph" style="margin-bottom:0;">${crime.paragraph}</div>
+          </div>
 
           <div class="detail-section-title">${isPrestupek ? "Zákonná sankce podle zákona o přestupcích" : "Zákonná sazba podle trestního zákoníku ČR"}</div>
           <div class="statutory-box">
