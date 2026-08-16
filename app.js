@@ -41,18 +41,20 @@
     try {
       const storedScores = localStorage.getItem("tresty_crime_scores");
       if (storedScores) {
-        state.crimeScores = JSON.parse(storedScores);
-      } else {
-        // Výchozí inicializace Elo (základ 1200 + kalibrace podle harmScore)
-        window.CRIMES_DATA.forEach(crime => {
+        state.crimeScores = JSON.parse(storedScores) || {};
+      }
+
+      // Vždy ověříme, že každý čin i nově přidaný přestupek má záznam ve skóre
+      window.CRIMES_DATA.forEach(crime => {
+        if (!state.crimeScores[crime.id] || typeof state.crimeScores[crime.id].elo !== 'number') {
           state.crimeScores[crime.id] = {
             elo: 1000 + (crime.harmAnalysis.harmScore * 8),
             wins: 0,
             matches: 0
           };
-        });
-        saveStoredScores();
-      }
+        }
+      });
+      saveStoredScores();
 
       const storedStats = localStorage.getItem("tresty_user_stats");
       if (storedStats) {
@@ -67,6 +69,20 @@
 
     // Pokud je v config.js nastaven Supabase, zkusíme načíst globální data
     await syncWithCloudDatabase();
+  }
+
+  function getCrimeScore(crimeId) {
+    if (!state.crimeScores[crimeId] || typeof state.crimeScores[crimeId].elo !== 'number') {
+      const crime = window.CRIMES_DATA.find(c => c.id === crimeId);
+      const baseElo = crime ? (1000 + (crime.harmAnalysis.harmScore * 8)) : 1000;
+      state.crimeScores[crimeId] = {
+        elo: baseElo,
+        wins: 0,
+        matches: 0
+      };
+      saveStoredScores();
+    }
+    return state.crimeScores[crimeId];
   }
 
   function saveStoredScores() {
@@ -192,7 +208,7 @@
     // 1. Náhodný výběr prvního činu A
     const idxA = Math.floor(Math.random() * crimes.length);
     const crimeA = crimes[idxA];
-    const scoreA = state.crimeScores[crimeA.id]?.elo || 1000;
+    const scoreA = getCrimeScore(crimeA.id).elo;
 
     // 2. Výpočet vah pro všechny ostatní kandidáty podle vzdálenosti v závažnosti
     const candidates = [];
@@ -201,7 +217,7 @@
     for (let i = 0; i < crimes.length; i++) {
       if (i === idxA) continue;
       const candidate = crimes[i];
-      const scoreB = state.crimeScores[candidate.id]?.elo || 1000;
+      const scoreB = getCrimeScore(candidate.id).elo;
       const diff = Math.abs(scoreA - scoreB);
 
       // Gaussovské vážení: e^(-diff^2 / (2*sigma^2)) + epsilon
@@ -377,14 +393,16 @@
 
     // Aktualizace Elo skóre
     const kFactor = 24;
-    const scoreA = state.crimeScores[selectedCrime.id].elo;
-    const scoreB = state.crimeScores[otherCrime.id].elo;
+    const scoreAObj = getCrimeScore(selectedCrime.id);
+    const scoreBObj = getCrimeScore(otherCrime.id);
+    const scoreA = scoreAObj.elo;
+    const scoreB = scoreBObj.elo;
     const expectedA = 1 / (1 + Math.pow(10, (scoreB - scoreA) / 400));
-    state.crimeScores[selectedCrime.id].elo += Math.round(kFactor * (1 - expectedA));
-    state.crimeScores[otherCrime.id].elo += Math.round(kFactor * (0 - (1 - expectedA)));
-    state.crimeScores[selectedCrime.id].wins++;
-    state.crimeScores[selectedCrime.id].matches++;
-    state.crimeScores[otherCrime.id].matches++;
+    scoreAObj.elo += Math.round(kFactor * (1 - expectedA));
+    scoreBObj.elo += Math.round(kFactor * (0 - (1 - expectedA)));
+    scoreAObj.wins++;
+    scoreAObj.matches++;
+    scoreBObj.matches++;
     saveStoredScores();
 
     // Záznam do cloudu
@@ -517,8 +535,8 @@
 
     if (state.rankingSortMode === "userVotes") {
       crimes.sort((a, b) => {
-        const scoreA = state.crimeScores[a.id]?.elo || 1000;
-        const scoreB = state.crimeScores[b.id]?.elo || 1000;
+        const scoreA = getCrimeScore(a.id).elo;
+        const scoreB = getCrimeScore(b.id).elo;
         return scoreB - scoreA;
       });
     } else if (state.rankingSortMode === "statutory") {
@@ -534,8 +552,9 @@
     let html = "";
     crimes.forEach((crime, index) => {
       const rankClass = index === 0 ? "top-1" : index === 1 ? "top-2" : index === 2 ? "top-3" : "";
-      const userElo = Math.round(state.crimeScores[crime.id]?.elo || 1000);
-      const matches = state.crimeScores[crime.id]?.matches || 0;
+      const scoreObj = getCrimeScore(crime.id);
+      const userElo = Math.round(scoreObj.elo || 1000);
+      const matches = scoreObj.matches || 0;
 
       html += `
         <div class="ranking-item">
