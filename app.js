@@ -17,7 +17,7 @@
     agreedWithCourtsCount: 0,
     categoryFilter: "all",
     rankingSortMode: "userVotes", // 'userVotes', 'statutory', 'courtSentence'
-    rankingViewMode: "matrix", // 'matrix' (grafické srovnání) nebo 'list' (klasický seznam)
+    rankingViewMode: "list", // 'list' (klasický seznam - výchozí) nebo 'flow' (SVG flow graf)
     sessionId: null,
     isCloudConnected: false,
     // Elo a skóre činů
@@ -529,12 +529,12 @@
   // =========================================================================
 
   // =========================================================================
-  // ŽEBŘÍČEK & GRAFICKÉ SROVNÁNÍ 3 VARIANT
+  // ŽEBŘÍČEK & FLOW GRAF SROVNÁNÍ 3 VARIANT
   // =========================================================================
 
   function renderRankingView() {
-    if (state.rankingViewMode === "matrix") {
-      renderComparisonMatrix();
+    if (state.rankingViewMode === "flow") {
+      renderFlowBumpChart();
     } else {
       renderRankingListView();
     }
@@ -543,44 +543,42 @@
   function setRankingViewMode(mode) {
     state.rankingViewMode = mode;
     
-    const btnMatrix = document.getElementById("btn-view-matrix");
+    const btnFlow = document.getElementById("btn-view-flow");
     const btnList = document.getElementById("btn-view-list");
     const sortControls = document.getElementById("ranking-sort-controls");
-    const matrixContainer = document.getElementById("ranking-matrix-container");
-    const insightsContainer = document.getElementById("ranking-insights-container");
+    const flowWrapper = document.getElementById("ranking-flow-wrapper");
     const listContainer = document.getElementById("ranking-list-container");
 
-    if (btnMatrix) btnMatrix.classList.toggle("active", mode === "matrix");
+    if (btnFlow) btnFlow.classList.toggle("active", mode === "flow");
     if (btnList) btnList.classList.toggle("active", mode === "list");
 
-    if (mode === "matrix") {
+    if (mode === "flow") {
       if (sortControls) sortControls.style.display = "none";
-      if (insightsContainer) insightsContainer.style.display = "grid";
-      if (matrixContainer) matrixContainer.style.display = "flex";
       if (listContainer) listContainer.style.display = "none";
-      renderComparisonMatrix();
+      if (flowWrapper) flowWrapper.style.display = "block";
+      renderFlowBumpChart();
     } else {
       if (sortControls) sortControls.style.display = "flex";
-      if (insightsContainer) insightsContainer.style.display = "none";
-      if (matrixContainer) matrixContainer.style.display = "none";
       if (listContainer) listContainer.style.display = "flex";
+      if (flowWrapper) flowWrapper.style.display = "none";
       renderRankingListView();
     }
   }
 
-  function renderComparisonMatrix() {
-    const matrixContainer = document.getElementById("ranking-matrix-container");
+  function renderFlowBumpChart() {
+    const svgContainer = document.getElementById("ranking-flow-svg-container");
     const insightsContainer = document.getElementById("ranking-insights-container");
-    if (!matrixContainer || !insightsContainer) return;
+    if (!svgContainer || !insightsContainer) return;
 
     const crimes = [...window.CRIMES_DATA];
+    const totalCrimes = crimes.length;
 
-    // 1. Pořadí podle Veřejnosti (Elo)
+    // 1. Spočítáme pořadí podle Veřejnosti (Elo)
     const publicSorted = [...crimes].sort((a, b) => getCrimeScore(b.id).elo - getCrimeScore(a.id).elo);
     const publicRanks = {};
     publicSorted.forEach((c, idx) => { publicRanks[c.id] = idx + 1; });
 
-    // 2. Pořadí podle Trestního zákoníku (Sazba)
+    // 2. Spočítáme pořadí podle Trestního zákoníku (Sazba)
     const lawSorted = [...crimes].sort((a, b) => {
       const isPrestA = a.delictType === "prestupek";
       const isPrestB = b.delictType === "prestupek";
@@ -593,7 +591,7 @@
     const lawRanks = {};
     lawSorted.forEach((c, idx) => { lawRanks[c.id] = idx + 1; });
 
-    // 3. Pořadí podle Soudní praxe
+    // 3. Spočítáme pořadí podle Soudní praxe
     const courtsSorted = [...crimes].sort((a, b) => {
       const aVal = (a.courtStats.unconditionalPrisonPct * 0.6) + (a.courtStats.avgPrisonSentenceMonths * 1.5) + (a.harmAnalysis.harmScore * 0.2);
       const bVal = (b.courtStats.unconditionalPrisonPct * 0.6) + (b.courtStats.avgPrisonSentenceMonths * 1.5) + (b.harmAnalysis.harmScore * 0.2);
@@ -602,21 +600,20 @@
     const courtsRanks = {};
     courtsSorted.forEach((c, idx) => { courtsRanks[c.id] = idx + 1; });
 
-    // Sestavení srovnávacího seznamu řazeného podle veřejného Elo
+    // Sestavení srovnávacího seznamu
     const comparisonList = [...crimes].map(crime => {
       const pRank = publicRanks[crime.id];
       const lRank = lawRanks[crime.id];
       const cRank = courtsRanks[crime.id];
       const delta = lRank - pRank; // Kladné = veřejnost trestá přísněji než zákon
       return { crime, pRank, lRank, cRank, delta };
-    }).sort((a, b) => a.pRank - b.pRank);
+    });
 
-    // Identifikace paradoxů
+    // Insight karty (Paradoxy)
     const maxStricterPublic = [...comparisonList].sort((a, b) => b.delta - a.delta)[0];
     const maxStricterLaw = [...comparisonList].sort((a, b) => a.delta - b.delta)[0];
     const bestConsensus = [...comparisonList].sort((a, b) => Math.abs(a.delta) - Math.abs(b.delta))[0];
 
-    // Vykreslení insight karet
     insightsContainer.innerHTML = `
       <div class="insight-card" style="border-left: 4px solid #f43f5e;">
         <div class="insight-card-header" style="color: #f43f5e;">
@@ -624,7 +621,7 @@
         </div>
         <div class="insight-card-title">${maxStricterPublic.crime.name}</div>
         <div class="insight-card-desc">
-          Lidé tento delikt řadí na <strong>#${maxStricterPublic.pRank}. příčku</strong>, zatímco zákoník až na <strong>#${maxStricterPublic.lRank}. místo</strong> (veřejný posun o +${maxStricterPublic.delta} pozic přísněji).
+          Lidé tento delikt řadí na <strong>#${maxStricterPublic.pRank}. místo</strong>, zatímco zákoník až na <strong>#${maxStricterPublic.lRank}. místo</strong> (veřejný posun o +${maxStricterPublic.delta} pozic přísněji).
         </div>
       </div>
 
@@ -649,80 +646,209 @@
       </div>
     `;
 
-    // Vykreslení srovnávací matice
-    let matrixHtml = `
-      <div class="matrix-header-row">
-        <div>Delikt / Skutek</div>
-        <div>👥 Veřejnost (Elo)</div>
-        <div>⚖️ Trestní zákoník</div>
-        <div>🏛️ Soudní praxe</div>
-        <div>Odchylka</div>
-      </div>
+    // Rozměry pro SVG graf
+    const rowH = 38;
+    const topPadding = 90;
+    const svgWidth = 1120;
+    const svgHeight = topPadding + (totalCrimes * rowH) + 30;
+
+    const xP_text = 240;
+    const xP_dot = 260;
+    const xL_dotIn = 410;
+    const xL_text = 540;
+    const xL_dotOut = 670;
+    const xC_dot = 820;
+    const xC_text = 840;
+
+    const categoryColors = {
+      ZivotZdravi: "#f43f5e",
+      SvobodaDostojnost: "#c084fc",
+      MajetekHospodarstvi: "#38bdf8",
+      DopravaZivotniProstredi: "#34d399",
+      StatPoradek: "#facc15",
+      prestupek: "#fb923c"
+    };
+
+    function getColor(crime) {
+      if (crime.delictType === "prestupek") return categoryColors.prestupek;
+      return categoryColors[crime.category] || "#94a3b8";
+    }
+
+    let svgHtml = `
+      <svg class="flow-svg-canvas" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMidYMid meet">
+        <!-- Sloupcové hlavičky -->
+        <g class="flow-headers">
+          <rect x="20" y="15" width="300" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+          <text x="170" y="41" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">👥 1. Hlasování veřejnosti (Elo)</text>
+
+          <rect x="385" y="15" width="310" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+          <text x="540" y="41" fill="#fbbf24" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">⚖️ 2. Trestní zákoník ČR (Sazba)</text>
+
+          <rect x="760" y="15" width="340" height="42" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+          <text x="930" y="41" fill="#34d399" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">🏛️ 3. Reálná soudní praxe</text>
+        </g>
+
+        <!-- Vodící vertikální čáry pro přehlednost -->
+        <line x1="${xP_dot}" y1="${topPadding - 10}" x2="${xP_dot}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
+        <line x1="${xL_dotIn}" y1="${topPadding - 10}" x2="${xL_dotIn}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
+        <line x1="${xL_dotOut}" y1="${topPadding - 10}" x2="${xL_dotOut}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
+        <line x1="${xC_dot}" y1="${topPadding - 10}" x2="${xC_dot}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
+
+        <!-- Flow křivky a skupiny deliktů -->
+        <g id="flow-groups-container">
     `;
 
-    const totalCrimes = crimes.length;
-
     comparisonList.forEach(item => {
-      const { crime, pRank, lRank, cRank, delta } = item;
+      const { crime, pRank, lRank, cRank } = item;
+      const color = getColor(crime);
       const isPrest = crime.delictType === "prestupek";
-      const scoreObj = getCrimeScore(crime.id);
 
-      const widthPub = Math.max(12, Math.round(((totalCrimes - pRank + 1) / totalCrimes) * 100));
-      const widthLaw = Math.max(12, Math.round(((totalCrimes - lRank + 1) / totalCrimes) * 100));
-      const widthCourts = Math.max(12, Math.round(((totalCrimes - cRank + 1) / totalCrimes) * 100));
+      const yP = topPadding + (pRank - 1) * rowH;
+      const yL = topPadding + (lRank - 1) * rowH;
+      const yC = topPadding + (cRank - 1) * rowH;
 
-      let deltaTag = "";
-      if (delta >= 4) {
-        deltaTag = `<span class="delta-badge stricter-public" title="Veřejnost hodnotí o ${delta} příček přísněji než zákon">▲ +${delta} přísnější</span>`;
-      } else if (delta <= -4) {
-        deltaTag = `<span class="delta-badge milder-public" title="Veřejnost hodnotí o ${Math.abs(delta)} příček mírněji než zákon">▼ ${delta} mírnější</span>`;
-      } else {
-        deltaTag = `<span class="delta-badge balanced" title="Shoda vnímání s nastavením zákona">✓ Shoda</span>`;
-      }
+      // Bézier curve P -> L
+      const c1x = xP_dot + 75;
+      const c2x = xL_dotIn - 75;
+      const path1 = `M ${xP_dot} ${yP} C ${c1x} ${yP}, ${c2x} ${yL}, ${xL_dotIn} ${yL}`;
 
-      matrixHtml += `
-        <div class="matrix-item-row">
-          <div class="matrix-crime-info">
-            <div class="matrix-crime-name">${crime.name}</div>
-            <div class="matrix-crime-meta">${isPrest ? '⚡ Přestupek' : '⚖️ ' + crime.paragraph}</div>
-          </div>
+      // Bézier curve L -> C
+      const c3x = xL_dotOut + 75;
+      const c4x = xC_dot - 75;
+      const path2 = `M ${xL_dotOut} ${yL} C ${c3x} ${yL}, ${c4x} ${yC}, ${xC_dot} ${yC}`;
 
-          <div class="matrix-col-stat">
-            <div class="rank-badge-wrap">
-              <span class="rank-badge public">#${pRank}</span>
-              <span class="mini-score-val">${Math.round(scoreObj.elo || 1000)} Elo</span>
-            </div>
-            <div class="matrix-bar-track">
-              <div class="matrix-bar-fill public" style="width: ${widthPub}%;"></div>
-            </div>
-          </div>
+      const courtTxt = isPrest ? 'Správní' : crime.courtStats.unconditionalPrisonPct + ' % vězení';
+      const shortName = crime.name.length > 24 ? (crime.name.substring(0, 22) + '…') : crime.name;
 
-          <div class="matrix-col-stat">
-            <div class="rank-badge-wrap">
-              <span class="rank-badge law">#${lRank}</span>
-              <span class="mini-score-val">${isPrest ? 'Pokuta' : crime.statutoryMaxYears + ' let'}</span>
-            </div>
-            <div class="matrix-bar-track">
-              <div class="matrix-bar-fill law" style="width: ${widthLaw}%;"></div>
-            </div>
-          </div>
+      svgHtml += `
+        <g class="flow-crime-group" data-crime-id="${crime.id}" onmouseenter="window.App.highlightCrimeFlow('${crime.id}')" onmouseleave="window.App.resetCrimeFlow()" style="transition: opacity 0.2s ease;">
+          <!-- Flow spojnice -->
+          <path class="flow-path flow-path-1" d="${path1}" stroke="${color}" stroke-width="2.2" opacity="0.45"/>
+          <path class="flow-path flow-path-2" d="${path2}" stroke="${color}" stroke-width="2.2" opacity="0.45"/>
 
-          <div class="matrix-col-stat">
-            <div class="rank-badge-wrap">
-              <span class="rank-badge courts">#${cRank}</span>
-              <span class="mini-score-val">${isPrest ? 'Správní' : crime.courtStats.unconditionalPrisonPct + ' % vězení'}</span>
-            </div>
-            <div class="matrix-bar-track">
-              <div class="matrix-bar-fill courts" style="width: ${widthCourts}%;"></div>
-            </div>
-          </div>
+          <!-- 1. Veřejnost Sloupec -->
+          <g class="flow-node-group">
+            <text x="${xP_text}" y="${yP + 4}" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif" text-anchor="end">
+              <tspan fill="#38bdf8" font-weight="700">#${pRank}</tspan> ${shortName}
+            </text>
+            <circle class="flow-node-circle" cx="${xP_dot}" cy="${yP}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
+          </g>
 
-          <div>${deltaTag}</div>
-        </div>
+          <!-- 2. Zákoník Sloupec -->
+          <g class="flow-node-group">
+            <circle class="flow-node-circle" cx="${xL_dotIn}" cy="${yL}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
+            <text x="${xL_text}" y="${yL + 4}" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">
+              <tspan fill="#fbbf24" font-weight="700">#${lRank}</tspan> ${shortName}
+            </text>
+            <circle class="flow-node-circle" cx="${xL_dotOut}" cy="${yL}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
+          </g>
+
+          <!-- 3. Soudy Sloupec -->
+          <g class="flow-node-group">
+            <circle class="flow-node-circle" cx="${xC_dot}" cy="${yC}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
+            <text x="${xC_text}" y="${yC + 4}" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif" text-anchor="start">
+              <tspan fill="#34d399" font-weight="700">#${cRank}</tspan> ${shortName} (${courtTxt})
+            </text>
+          </g>
+        </g>
       `;
     });
 
-    matrixContainer.innerHTML = matrixHtml;
+    svgHtml += `
+        </g>
+      </svg>
+    `;
+
+    svgContainer.innerHTML = svgHtml;
+  }
+
+  function highlightCrimeFlow(crimeId) {
+    const groups = document.querySelectorAll(".flow-crime-group");
+    const crime = window.CRIMES_DATA.find(c => c.id === crimeId);
+    if (!crime) return;
+
+    const tooltipBox = document.getElementById("flow-hover-tooltip-box");
+
+    // Zvýrazníme vybraný delikt a ztlumíme ostatní
+    groups.forEach(g => {
+      const isTarget = g.dataset.crimeId === crimeId;
+      g.classList.toggle("flow-highlighted", isTarget);
+      g.classList.toggle("flow-dimmed", !isTarget);
+      
+      const paths = g.querySelectorAll(".flow-path");
+      paths.forEach(p => {
+        if (isTarget) {
+          p.setAttribute("stroke-width", "4.8");
+          p.setAttribute("opacity", "1");
+        } else {
+          p.setAttribute("stroke-width", "1.5");
+          p.setAttribute("opacity", "0.1");
+        }
+      });
+
+      const circles = g.querySelectorAll(".flow-node-circle");
+      circles.forEach(c => {
+        if (isTarget) c.setAttribute("r", "6.5");
+        else c.setAttribute("r", "3.5");
+      });
+    });
+
+    // Vypočteme pozice a text pro tooltip
+    const pRank = [...window.CRIMES_DATA].sort((a, b) => getCrimeScore(b.id).elo - getCrimeScore(a.id).elo).findIndex(c => c.id === crimeId) + 1;
+    const lRank = [...window.CRIMES_DATA].sort((a, b) => {
+      const isPrestA = a.delictType === "prestupek";
+      const isPrestB = b.delictType === "prestupek";
+      if (!isPrestA && isPrestB) return -1;
+      if (isPrestA && !isPrestB) return 1;
+      if (isPrestA && isPrestB) return (b.statutoryFineMaxKc || 0) - (a.statutoryFineMaxKc || 0);
+      return (b.statutoryMaxYears || 0) - (a.statutoryMaxYears || 0);
+    }).findIndex(c => c.id === crimeId) + 1;
+    const cRank = [...window.CRIMES_DATA].sort((a, b) => {
+      const aVal = (a.courtStats.unconditionalPrisonPct * 0.6) + (a.courtStats.avgPrisonSentenceMonths * 1.5);
+      const bVal = (b.courtStats.unconditionalPrisonPct * 0.6) + (b.courtStats.avgPrisonSentenceMonths * 1.5);
+      return bVal - aVal;
+    }).findIndex(c => c.id === crimeId) + 1;
+
+    const delta = lRank - pRank;
+    const deltaText = delta > 0 ? `▲ o ${delta} příček přísnější u veřejnosti` : delta < 0 ? `▼ o ${Math.abs(delta)} příček mírnější u veřejnosti` : `✓ Přesná shoda`;
+
+    if (tooltipBox) {
+      tooltipBox.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <strong style="color:var(--text-primary); font-size:1rem;">${crime.name}</strong> 
+            <span style="color:var(--text-muted); font-size:0.85rem;">(${crime.paragraph})</span>
+          </div>
+          <div style="display:flex; gap:0.75rem; align-items:center; font-size:0.85rem; flex-wrap:wrap;">
+            <span style="color:#38bdf8; font-weight:700;">👥 Veřejnost: #${pRank}</span>
+            <span style="color:var(--text-muted);">➔</span>
+            <span style="color:#fbbf24; font-weight:700;">⚖️ Zákoník: #${lRank}</span>
+            <span style="color:var(--text-muted);">➔</span>
+            <span style="color:#34d399; font-weight:700;">🏛️ Soudy: #${cRank}</span>
+            <span class="delta-badge ${delta > 0 ? 'stricter-public' : delta < 0 ? 'milder-public' : 'balanced'}" style="margin-left:0.5rem;">${deltaText}</span>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  function resetCrimeFlow() {
+    const groups = document.querySelectorAll(".flow-crime-group");
+    groups.forEach(g => {
+      g.classList.remove("flow-highlighted", "flow-dimmed");
+      const paths = g.querySelectorAll(".flow-path");
+      paths.forEach(p => {
+        p.setAttribute("stroke-width", "2.2");
+        p.setAttribute("opacity", "0.45");
+      });
+      const circles = g.querySelectorAll(".flow-node-circle");
+      circles.forEach(c => c.setAttribute("r", "4.5"));
+    });
+
+    const tooltipBox = document.getElementById("flow-hover-tooltip-box");
+    if (tooltipBox) {
+      tooltipBox.innerHTML = `<span>💡 Najeďte kurzorem na delikt nebo linii pro zvýraznění jeho toku napříč všemi 3 žebříčky.</span>`;
+    }
   }
 
   function renderRankingListView() {
@@ -949,9 +1075,9 @@
     // Event listener pro další dilema
     document.getElementById("btn-next-duel")?.addEventListener("click", loadNewDuel);
 
-    // Event listenery pro přepínání režimu žebříčku (Matice vs Seznam)
-    document.getElementById("btn-view-matrix")?.addEventListener("click", () => setRankingViewMode("matrix"));
+    // Event listenery pro přepínání režimu žebříčku (Seznam vs Flow graf)
     document.getElementById("btn-view-list")?.addEventListener("click", () => setRankingViewMode("list"));
+    document.getElementById("btn-view-flow")?.addEventListener("click", () => setRankingViewMode("flow"));
 
     // Event listenery pro řazení v žebříčku
     document.querySelectorAll(".ranking-toggle-btn").forEach(btn => {
@@ -981,6 +1107,8 @@
     switchTab,
     setRankingSort,
     setRankingViewMode,
+    highlightCrimeFlow,
+    resetCrimeFlow,
     resetUserStats
   };
 

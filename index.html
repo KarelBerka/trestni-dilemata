@@ -111,39 +111,48 @@
     <section class="view-section" id="view-ranking">
       <div class="ranking-header">
         <h2 class="ranking-title">Žebříček závažnosti deliktů a srovnání</h2>
-        <p class="ranking-subtitle">Grafické i tabulkové porovnání vnímání veřejnosti (Elo), horní hranice trestní sazby a reálné soudní praxe v ČR.</p>
+        <p class="ranking-subtitle">Srovnání vnímání veřejnosti (Elo), horní hranice trestní sazby a reálné soudní praxe v ČR.</p>
       </div>
 
       <div class="ranking-filters">
         <div class="comparison-view-toggle">
-          <button class="comp-view-btn active" id="btn-view-matrix" data-view="matrix">
-            <span>📊 Grafické srovnání 3 variant</span>
-          </button>
-          <button class="comp-view-btn" id="btn-view-list" data-view="list">
+          <button class="comp-view-btn active" id="btn-view-list" data-view="list">
             <span>📋 Seznam deliktů s řazením</span>
+          </button>
+          <button class="comp-view-btn" id="btn-view-flow" data-view="flow">
+            <span>📊 Flow graf řazení (3 sloupce)</span>
           </button>
         </div>
 
-        <div class="ranking-toggle-group" id="ranking-sort-controls" style="display: none;">
+        <div class="ranking-toggle-group" id="ranking-sort-controls">
           <button class="ranking-toggle-btn active" data-sort="userVotes">👥 Veřejnost (Elo)</button>
           <button class="ranking-toggle-btn" data-sort="statutory">⚖️ Trestní zákoník</button>
           <button class="ranking-toggle-btn" data-sort="courtSentence">🏛️ Soudní praxe</button>
         </div>
       </div>
 
-      <!-- INSIGHTS CARDS (PARADOXY) -->
-      <div class="insights-summary-grid" id="ranking-insights-container">
-        <!-- Dynamically rendered insights -->
-      </div>
-
-      <!-- GRAFICKÁ SROVNÁVACÍ MATICE -->
-      <div class="comparison-matrix-container" id="ranking-matrix-container">
-        <!-- Dynamically rendered matrix -->
-      </div>
-
-      <!-- KLASICKÝ SEZNAM -->
-      <div class="ranking-list" id="ranking-list-container" style="display: none;">
+      <!-- KLASICKÝ SEZNAM (DEFAULTNÍ ZOBRAZENÍ) -->
+      <div class="ranking-list" id="ranking-list-container">
         <!-- Dynamically rendered ranking items -->
+      </div>
+
+      <!-- FLOW GRAF SROVNÁNÍ (BUMP / PARALLEL RANK CHART) -->
+      <div id="ranking-flow-wrapper" style="display: none;">
+        <!-- Insight box s popisem vybraného deliktu při hoveru -->
+        <div id="flow-hover-tooltip-box" class="flow-interactive-legend">
+          <span>💡 Najeďte kurzorem na delikt nebo linii pro zvýraznění jeho toku napříč všemi 3 žebříčky.</span>
+        </div>
+
+        <!-- INSIGHTS CARDS (PARADOXY) -->
+        <div class="insights-summary-grid" id="ranking-insights-container">
+          <!-- Dynamically rendered insights -->
+        </div>
+
+        <div class="flow-svg-scroll-container">
+          <div id="ranking-flow-svg-container">
+            <!-- Dynamically rendered SVG Flow Graph -->
+          </div>
+        </div>
       </div>
     </section>
 
@@ -248,8 +257,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="config.js?v=1.5"></script>
-  <script src="crimes-data.js?v=1.5"></script>
-  <script src="app.js?v=1.5"></script>
+  <script src="config.js?v=1.6"></script>
+  <script src="crimes-data.js?v=1.6"></script>
+  <script src="app.js?v=1.6"></script>
 </body>
 </html>

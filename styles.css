@@ -1117,6 +1117,70 @@ body {
 }
 
 /* ==========================================================================
+   SVG Flow Chart (Bump / Parallel Coordinates)
+   ========================================================================== */
+
+.flow-interactive-legend {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.flow-svg-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1rem;
+}
+
+.flow-svg-canvas {
+  width: 100%;
+  min-width: 960px;
+  height: auto;
+  display: block;
+}
+
+.flow-path {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-width 0.2s ease, opacity 0.2s ease, filter 0.2s ease;
+  cursor: pointer;
+}
+
+.flow-node-group {
+  cursor: pointer;
+}
+
+.flow-node-circle {
+  transition: r 0.2s ease, stroke-width 0.2s ease;
+}
+
+.flow-node-group:hover text {
+  font-weight: 800;
+}
+
+.flow-dimmed {
+  opacity: 0.1 !important;
+}
+
+.flow-highlighted {
+  opacity: 1.0 !important;
+  stroke-width: 4.5px !important;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75));
+}
+
+/* ==========================================================================
    Catalog & Encyclopedia
    ========================================================================== */
 
