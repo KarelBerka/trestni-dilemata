@@ -16,12 +16,16 @@
     agreedWithLawCount: 0,
     agreedWithCourtsCount: 0,
     categoryFilter: "all",
-    rankingSortMode: "userVotes", // 'userVotes', 'statutory', 'courtSentence'
+    rankingSortMode: "globalPublic", // 'globalPublic', 'userVotes', 'statutory', 'courtSentence'
     rankingViewMode: "flow", // 'flow' (SVG flow graf - výchozí) nebo 'list' (klasický seznam)
+    flowFirstColumnMode: "public", // 'public' (Globální veřejnost ze Supabase) nebo 'user' (Vaše lokální hlasy)
     sessionId: null,
     isCloudConnected: false,
-    // Elo a skóre činů
-    crimeScores: {},
+    // Lokální skóre z této hry / prohlížeče (Vaše hlasy)
+    userScores: {},
+    // Globální agregované skóre veřejnosti ze Supabase
+    globalScores: {},
+    totalGlobalVotes: 0,
     history: []
   };
 
@@ -39,23 +43,29 @@
   async function loadStoredData() {
     state.sessionId = getSessionId();
 
+    // 1. Inicializace výchozího globálního skóre (baseline)
+    initGlobalScores();
+
+    // 2. Načtení lokálního skóre uživatele (Vaše hlasy)
     try {
-      const storedScores = localStorage.getItem("tresty_crime_scores");
-      if (storedScores) {
-        state.crimeScores = JSON.parse(storedScores) || {};
+      const storedUserScores = localStorage.getItem("tresty_user_scores") || localStorage.getItem("tresty_crime_scores");
+      if (storedUserScores) {
+        state.userScores = JSON.parse(storedUserScores) || {};
       }
 
-      // Vždy ověříme, že každý čin i nově přidaný přestupek má záznam ve skóre
       window.CRIMES_DATA.forEach(crime => {
-        if (!state.crimeScores[crime.id] || typeof state.crimeScores[crime.id].elo !== 'number') {
-          state.crimeScores[crime.id] = {
-            elo: 1000 + (crime.harmAnalysis.harmScore * 8),
+        if (!state.userScores[crime.id] || typeof state.userScores[crime.id].elo !== 'number') {
+          const baseElo = (window.DEFAULT_CRIME_SCORES && window.DEFAULT_CRIME_SCORES[crime.id]) 
+            ? window.DEFAULT_CRIME_SCORES[crime.id].elo 
+            : (1000 + (crime.harmAnalysis.harmScore * 8));
+          state.userScores[crime.id] = {
+            elo: baseElo,
             wins: 0,
             matches: 0
           };
         }
       });
-      saveStoredScores();
+      saveStoredUserScores();
 
       const storedStats = localStorage.getItem("tresty_user_stats");
       if (storedStats) {
@@ -68,29 +78,59 @@
       console.error("Chyba při načítání dat z localStorage:", e);
     }
 
-    // Pokud je v config.js nastaven Supabase, zkusíme načíst globální data
+    // 3. Načtení a přepočet reálných hlasů veřejnosti ze Supabase
     await syncWithCloudDatabase();
   }
 
-  function getCrimeScore(crimeId) {
-    if (!state.crimeScores[crimeId] || typeof state.crimeScores[crimeId].elo !== 'number') {
-      const crime = window.CRIMES_DATA.find(c => c.id === crimeId);
-      const baseElo = crime ? (1000 + (crime.harmAnalysis.harmScore * 8)) : 1000;
-      state.crimeScores[crimeId] = {
+  function initGlobalScores() {
+    window.CRIMES_DATA.forEach(crime => {
+      const baseElo = (window.DEFAULT_CRIME_SCORES && window.DEFAULT_CRIME_SCORES[crime.id]) 
+        ? window.DEFAULT_CRIME_SCORES[crime.id].elo 
+        : (1000 + (crime.harmAnalysis.harmScore * 8));
+      state.globalScores[crime.id] = {
         elo: baseElo,
         wins: 0,
         matches: 0
       };
-      saveStoredScores();
-    }
-    return state.crimeScores[crimeId];
+    });
   }
 
-  function saveStoredScores() {
+  function getUserScore(crimeId) {
+    if (!state.userScores[crimeId] || typeof state.userScores[crimeId].elo !== 'number') {
+      const crime = window.CRIMES_DATA.find(c => c.id === crimeId);
+      const baseElo = crime ? (1000 + (crime.harmAnalysis.harmScore * 8)) : 1000;
+      state.userScores[crimeId] = {
+        elo: baseElo,
+        wins: 0,
+        matches: 0
+      };
+    }
+    return state.userScores[crimeId];
+  }
+
+  function getGlobalScore(crimeId) {
+    if (!state.globalScores[crimeId] || typeof state.globalScores[crimeId].elo !== 'number') {
+      const crime = window.CRIMES_DATA.find(c => c.id === crimeId);
+      const baseElo = crime ? (1000 + (crime.harmAnalysis.harmScore * 8)) : 1000;
+      state.globalScores[crimeId] = {
+        elo: baseElo,
+        wins: 0,
+        matches: 0
+      };
+    }
+    return state.globalScores[crimeId];
+  }
+
+  // Zpětná kompatibilita
+  function getCrimeScore(crimeId) {
+    return state.rankingSortMode === "userVotes" ? getUserScore(crimeId) : getGlobalScore(crimeId);
+  }
+
+  function saveStoredUserScores() {
     try {
-      localStorage.setItem("tresty_crime_scores", JSON.stringify(state.crimeScores));
+      localStorage.setItem("tresty_user_scores", JSON.stringify(state.userScores));
     } catch (e) {
-      console.error("Nelze uložit skóre:", e);
+      console.error("Nelze uložit skóre uživatele:", e);
     }
   }
 
@@ -99,7 +139,7 @@
       localStorage.setItem("tresty_user_stats", JSON.stringify({
         total: state.totalDilemmasAnswered,
         agreedLaw: state.agreedWithLawCount,
-        agreedCourts: state.agreedCourtsCount
+        agreedCourts: state.agreedWithCourtsCount
       }));
     } catch (e) {
       console.error("Nelze uložit statistiky:", e);
@@ -107,7 +147,7 @@
   }
 
   // =========================================================================
-  // CLOUDOVÁ SYNCHRONIZACE (SUPABASE REST API)
+  // CLOUDOVÁ SYNCHRONIZACE & GLOBÁLNÍ ELO VEŘEJNOSTI (SUPABASE REST API)
   // =========================================================================
 
   async function syncWithCloudDatabase() {
@@ -120,25 +160,66 @@
     }
 
     try {
-      // Test spojení dotazem na tabulku votes
-      const response = await fetch(`${config.supabaseUrl}/rest/v1/votes?select=id&limit=1`, {
-        method: "GET",
-        headers: {
-          "apikey": config.supabaseAnonKey,
-          "Authorization": `Bearer ${config.supabaseAnonKey}`
+      // 1. Reset globálního Elo na baseline před započtením hlasů
+      initGlobalScores();
+
+      // 2. Načteme všechny hlasy ze Supabase (s paginací po 1 000 záznamech)
+      let allVotes = [];
+      let page = 0;
+      const pageSize = 1000;
+
+      while (true) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+        const response = await fetch(`${config.supabaseUrl}/rest/v1/votes?select=winner_id,loser_id&order=created_at.asc`, {
+          method: "GET",
+          headers: {
+            "apikey": config.supabaseAnonKey,
+            "Authorization": `Bearer ${config.supabaseAnonKey}`,
+            "Range": `${from}-${to}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        if (!Array.isArray(data) || data.length === 0) break;
+        allVotes = allVotes.concat(data);
+        if (data.length < pageSize) break;
+        page++;
+      }
+
+      state.totalGlobalVotes = allVotes.length;
+      state.isCloudConnected = true;
+
+      // 3. Spočítáme reálné globální Elo veřejnosti ze všech odehraných duelů
+      const kFactor = 24;
+      allVotes.forEach(v => {
+        const wId = v.winner_id;
+        const lId = v.loser_id;
+        if (state.globalScores[wId] && state.globalScores[lId]) {
+          const scoreW = state.globalScores[wId];
+          const scoreL = state.globalScores[lId];
+          const expectedW = 1 / (1 + Math.pow(10, (scoreL.elo - scoreW.elo) / 400));
+          scoreW.elo += Math.round(kFactor * (1 - expectedW));
+          scoreL.elo += Math.round(kFactor * (0 - (1 - expectedW)));
+          scoreW.wins++;
+          scoreW.matches++;
+          scoreL.matches++;
         }
       });
 
-      if (response.ok) {
-        state.isCloudConnected = true;
-        console.log("✅ Úspěšně připojeno k Supabase projektu:", config.supabaseUrl);
-      } else {
-        const errorText = await response.text();
-        console.warn(`⚠️ Supabase vrátilo chybu HTTP ${response.status}:`, errorText);
-        state.isCloudConnected = false;
+      console.log(`✅ Úspěšně načteno a přepočteno ${allVotes.length} hlasů veřejnosti ze Supabase.`);
+
+      // Pokud je zrovna otevřený žebříček, překreslíme jej s reálnými daty
+      const activeSec = document.querySelector(".view-section.active");
+      if (activeSec && activeSec.id === "view-ranking") {
+        renderRankingView();
       }
     } catch (err) {
-      console.warn("⚠️ Nelze se spojit se Supabase URL (zkontrolujte formát URL v config.js):", err.message);
+      console.warn("⚠️ Nelze synchronizovat hlasy ze Supabase:", err.message);
       state.isCloudConnected = false;
     }
 
@@ -179,8 +260,8 @@
     const badge = document.getElementById("cloud-status-badge");
     if (!badge) return;
     if (state.isCloudConnected) {
-      badge.innerHTML = `🟢 Cloud synchronizován`;
-      badge.title = "Hlasy jsou ukládány centrálně pro všechny uživatele";
+      badge.innerHTML = `🟢 Veřejnost: ${state.totalGlobalVotes} duelů`;
+      badge.title = "Aplikace je propojena se Supabase databází se všemi hlasy hráčů";
       badge.style.color = "#34d399";
     } else {
       badge.innerHTML = `💾 Lokální režim`;
@@ -195,8 +276,7 @@
 
   /**
    * Vybere dvojici činů se statistickou preferencí pro podobnou závažnost.
-   * Eliminuje triviální duely (např. Vražda vs Krádež kola), zatímco zachovává
-   * občasnou variabilitu pro kalibraci napříč celým spektrem.
+   * Eliminuje triviální duely, zatímco zachovává variabilitu pro kalibraci.
    */
   function getSmartPair() {
     const crimes = window.CRIMES_DATA;
@@ -209,7 +289,7 @@
     // 1. Náhodný výběr prvního činu A
     const idxA = Math.floor(Math.random() * crimes.length);
     const crimeA = crimes[idxA];
-    const scoreA = getCrimeScore(crimeA.id).elo;
+    const scoreA = getGlobalScore(crimeA.id).elo;
 
     // 2. Výpočet vah pro všechny ostatní kandidáty podle vzdálenosti v závažnosti
     const candidates = [];
@@ -381,21 +461,31 @@
     const selectedCrime = crimeA.id === selectedCrimeId ? crimeA : crimeB;
     const otherCrime = crimeA.id === selectedCrimeId ? crimeB : crimeA;
 
-    // Aktualizace Elo skóre
+    // 1. Aktualizace osobního lokálního skóre uživatele (Vaše hlasy)
     const kFactor = 24;
-    const scoreAObj = getCrimeScore(selectedCrime.id);
-    const scoreBObj = getCrimeScore(otherCrime.id);
-    const scoreA = scoreAObj.elo;
-    const scoreB = scoreBObj.elo;
-    const expectedA = 1 / (1 + Math.pow(10, (scoreB - scoreA) / 400));
-    scoreAObj.elo += Math.round(kFactor * (1 - expectedA));
-    scoreBObj.elo += Math.round(kFactor * (0 - (1 - expectedA)));
-    scoreAObj.wins++;
-    scoreAObj.matches++;
-    scoreBObj.matches++;
-    saveStoredScores();
+    const userScoreA = getUserScore(selectedCrime.id);
+    const userScoreB = getUserScore(otherCrime.id);
+    const expUserA = 1 / (1 + Math.pow(10, (userScoreB.elo - userScoreA.elo) / 400));
+    userScoreA.elo += Math.round(kFactor * (1 - expUserA));
+    userScoreB.elo += Math.round(kFactor * (0 - (1 - expUserA)));
+    userScoreA.wins++;
+    userScoreA.matches++;
+    userScoreB.matches++;
+    saveStoredUserScores();
 
-    // Záznam do cloudu
+    // 2. Aktualizace globálního komunitního skóre (Veřejnost)
+    const globScoreA = getGlobalScore(selectedCrime.id);
+    const globScoreB = getGlobalScore(otherCrime.id);
+    const expGlobA = 1 / (1 + Math.pow(10, (globScoreB.elo - globScoreA.elo) / 400));
+    globScoreA.elo += Math.round(kFactor * (1 - expGlobA));
+    globScoreB.elo += Math.round(kFactor * (0 - (1 - expGlobA)));
+    globScoreA.wins++;
+    globScoreA.matches++;
+    globScoreB.matches++;
+    state.totalGlobalVotes++;
+    updateCloudStatusBadge();
+
+    // 3. Záznam do centrální Supabase databáze
     recordVoteToCloud(selectedCrime.id, otherCrime.id);
 
     // Posouzení přísnosti podle zákonné sazby
@@ -548,6 +638,14 @@
     }
   }
 
+  function setFlowPerspective(mode) {
+    state.flowFirstColumnMode = mode;
+    document.querySelectorAll(".flow-perspective-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.perspective === mode);
+    });
+    renderFlowBumpChart();
+  }
+
   function renderFlowBumpChart() {
     const svgContainer = document.getElementById("ranking-flow-svg-container");
     const insightsContainer = document.getElementById("ranking-insights-container");
@@ -555,11 +653,22 @@
 
     const crimes = [...window.CRIMES_DATA];
     const totalCrimes = crimes.length;
+    const isUserPersp = state.flowFirstColumnMode === "user";
 
-    // 1. Spočítáme pořadí podle Veřejnosti (Elo)
-    const publicSorted = [...crimes].sort((a, b) => getCrimeScore(b.id).elo - getCrimeScore(a.id).elo);
-    const publicRanks = {};
-    publicSorted.forEach((c, idx) => { publicRanks[c.id] = idx + 1; });
+    // 1. Spočítáme pořadí podle zvolené perspektivy 1. sloupce (Globální Veřejnost vs Vaše lokální hlasy)
+    const firstColSorted = [...crimes].sort((a, b) => {
+      const eloA = isUserPersp ? getUserScore(a.id).elo : getGlobalScore(a.id).elo;
+      const eloB = isUserPersp ? getUserScore(b.id).elo : getGlobalScore(b.id).elo;
+      return eloB - eloA;
+    });
+    const firstColRanks = {};
+    firstColSorted.forEach((c, idx) => { firstColRanks[c.id] = idx + 1; });
+
+    // Globální a uživatelské pořadí pro tooltip
+    const globRanks = {};
+    [...crimes].sort((a, b) => getGlobalScore(b.id).elo - getGlobalScore(a.id).elo).forEach((c, idx) => { globRanks[c.id] = idx + 1; });
+    const userRanks = {};
+    [...crimes].sort((a, b) => getUserScore(b.id).elo - getUserScore(a.id).elo).forEach((c, idx) => { userRanks[c.id] = idx + 1; });
 
     // 2. Spočítáme pořadí podle Trestního zákoníku (Sazba)
     const lawSorted = [...crimes].sort((a, b) => {
@@ -576,8 +685,8 @@
 
     // 3. Spočítáme pořadí podle Soudní praxe
     const courtsSorted = [...crimes].sort((a, b) => {
-      const aVal = (a.courtStats.unconditionalPrisonPct * 0.6) + (a.courtStats.avgPrisonSentenceMonths * 1.5) + (a.harmAnalysis.harmScore * 0.2);
-      const bVal = (b.courtStats.unconditionalPrisonPct * 0.6) + (b.courtStats.avgPrisonSentenceMonths * 1.5) + (b.harmAnalysis.harmScore * 0.2);
+      const aVal = (a.courtStats.unconditionalPrisonPct * 0.6) + (a.courtStats.avgPrisonSentenceMonths * 1.5) + (a.harmAnalysis?.harmScore || 50) * 0.2;
+      const bVal = (b.courtStats.unconditionalPrisonPct * 0.6) + (b.courtStats.avgPrisonSentenceMonths * 1.5) + (b.harmAnalysis?.harmScore || 50) * 0.2;
       return bVal - aVal;
     });
     const courtsRanks = {};
@@ -585,10 +694,10 @@
 
     // Sestavení srovnávacího seznamu
     const comparisonList = [...crimes].map(crime => {
-      const pRank = publicRanks[crime.id];
+      const pRank = firstColRanks[crime.id];
       const lRank = lawRanks[crime.id];
       const cRank = courtsRanks[crime.id];
-      const delta = lRank - pRank; // Kladné = veřejnost trestá přísněji než zákon
+      const delta = lRank - pRank; // Kladné = 1. sloupec trestá přísněji než zákon
       return { crime, pRank, lRank, cRank, delta };
     });
 
@@ -597,24 +706,27 @@
     const maxStricterLaw = [...comparisonList].sort((a, b) => a.delta - b.delta)[0];
     const bestConsensus = [...comparisonList].sort((a, b) => Math.abs(a.delta) - Math.abs(b.delta))[0];
 
+    const labelWho = isUserPersp ? "Vy" : "Veřejnost";
+    const labelWho2 = isUserPersp ? "Váš výběr" : "Lidé";
+
     insightsContainer.innerHTML = `
       <div class="insight-card" style="border-left: 4px solid #f43f5e;">
         <div class="insight-card-header" style="color: #f43f5e;">
-          <span>🚨 Veřejnost přísnější než zákon</span>
+          <span>🚨 ${labelWho} přísnější než zákon</span>
         </div>
         <div class="insight-card-title">${maxStricterPublic.crime.name}</div>
         <div class="insight-card-desc">
-          Lidé tento delikt řadí na <strong>#${maxStricterPublic.pRank}. místo</strong>, zatímco zákoník až na <strong>#${maxStricterPublic.lRank}. místo</strong> (veřejný posun o +${maxStricterPublic.delta} pozic přísněji).
+          ${labelWho2} tento delikt řadí na <strong>#${maxStricterPublic.pRank}. místo</strong>, zatímco zákoník až na <strong>#${maxStricterPublic.lRank}. místo</strong> (posun o +${maxStricterPublic.delta} pozic přísněji).
         </div>
       </div>
 
       <div class="insight-card" style="border-left: 4px solid #38bdf8;">
         <div class="insight-card-header" style="color: #38bdf8;">
-          <span>🏛️ Zákon přísnější než veřejnost</span>
+          <span>🏛️ Zákon přísnější než ${labelWho.toLowerCase()}</span>
         </div>
         <div class="insight-card-title">${maxStricterLaw.crime.name}</div>
         <div class="insight-card-desc">
-          Zákoník stanovuje přísnou sazbu na <strong>#${maxStricterLaw.lRank}. místě</strong>, avšak veřejnost čin vnímá relativně mírněji na <strong>#${maxStricterLaw.pRank}. místě</strong> (o ${Math.abs(maxStricterLaw.delta)} příček).
+          Zákoník stanovuje přísnou sazbu na <strong>#${maxStricterLaw.lRank}. místě</strong>, avšak ${isUserPersp ? 'vy čin vnímáte' : 'veřejnost čin vnímá'} na <strong>#${maxStricterLaw.pRank}. místě</strong> (o ${Math.abs(maxStricterLaw.delta)} příček mírněji).
         </div>
       </div>
 
@@ -624,7 +736,7 @@
         </div>
         <div class="insight-card-title">${bestConsensus.crime.name}</div>
         <div class="insight-card-desc">
-          Absolutní shoda napříč společností: <strong>#${bestConsensus.pRank}. u lidí</strong>, <strong>#${bestConsensus.lRank}. v zákoníku</strong> a <strong>#${bestConsensus.cRank}. u soudů</strong>.
+          Vysoká shoda: <strong>#${bestConsensus.pRank}. u vás/lidí</strong>, <strong>#${bestConsensus.lRank}. v zákoníku</strong> a <strong>#${bestConsensus.cRank}. u soudů</strong>.
         </div>
       </div>
     `;
@@ -643,8 +755,6 @@
     const xC_dot = 840;
     const xC_text = 860;
 
-    const totalVotes = Math.round(Object.values(state.crimeScores).reduce((sum, s) => sum + (s.matches || 0), 0) / 2);
-
     const categoryColors = {
       ZivotZdravi: "#f43f5e",
       SvobodaDostojnost: "#c084fc",
@@ -659,14 +769,19 @@
       return categoryColors[crime.category] || "#94a3b8";
     }
 
+    const firstColTitle = isUserPersp ? "👤 1. Vaše hlasy" : "👥 1. Hlasování veřejnosti";
+    const firstColSub = isUserPersp 
+      ? `Odehráno ${state.totalDilemmasAnswered} duelů (tato hra)` 
+      : `Celkem ${state.totalGlobalVotes} duelů (Supabase)`;
+
     let svgHtml = `
       <svg class="flow-svg-canvas" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
         <!-- Sloupcové hlavičky s vysvětlivkami a odkazy -->
         <g class="flow-headers">
-          <!-- 1. Veřejnost -->
+          <!-- 1. Veřejnost / Vaše hlasy -->
           <rect x="20" y="15" width="300" height="58" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
-          <text x="170" y="37" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">👥 1. Hlasování veřejnosti</text>
-          <text x="170" y="58" fill="#94a3b8" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif">Počet duelů: ${totalVotes} hlasů (Elo)</text>
+          <text x="170" y="37" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">${firstColTitle}</text>
+          <text x="170" y="58" fill="#94a3b8" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif">${firstColSub}</text>
 
           <!-- 2. Trestní zákoník -->
           <a xlink:href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank">
@@ -721,7 +836,7 @@
           <path class="flow-path flow-path-1" d="${path1}" stroke="${color}" stroke-width="2.2" opacity="0.45"/>
           <path class="flow-path flow-path-2" d="${path2}" stroke="${color}" stroke-width="2.2" opacity="0.45"/>
 
-          <!-- 1. Veřejnost Sloupec -->
+          <!-- 1. Veřejnost / Vaše hlasy Sloupec -->
           <g class="flow-node-group">
             <text x="${xP_text}" y="${yP + 4}" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif" text-anchor="end">
               <tspan fill="#38bdf8" font-weight="700">#${pRank}</tspan> ${shortName}
@@ -790,7 +905,9 @@
     });
 
     // Vypočteme pozice a text pro tooltip
-    const pRank = [...window.CRIMES_DATA].sort((a, b) => getCrimeScore(b.id).elo - getCrimeScore(a.id).elo).findIndex(c => c.id === crimeId) + 1;
+    const isUserPersp = state.flowFirstColumnMode === "user";
+    const pRankGlob = [...window.CRIMES_DATA].sort((a, b) => getGlobalScore(b.id).elo - getGlobalScore(a.id).elo).findIndex(c => c.id === crimeId) + 1;
+    const pRankUser = [...window.CRIMES_DATA].sort((a, b) => getUserScore(b.id).elo - getUserScore(a.id).elo).findIndex(c => c.id === crimeId) + 1;
     const lRank = [...window.CRIMES_DATA].sort((a, b) => {
       const isPrestA = a.delictType === "prestupek";
       const isPrestB = b.delictType === "prestupek";
@@ -805,8 +922,9 @@
       return bVal - aVal;
     }).findIndex(c => c.id === crimeId) + 1;
 
-    const delta = lRank - pRank;
-    const deltaText = delta > 0 ? `▲ o ${delta} příček přísnější u veřejnosti` : delta < 0 ? `▼ o ${Math.abs(delta)} příček mírnější u veřejnosti` : `✓ Přesná shoda`;
+    const currentRank = isUserPersp ? pRankUser : pRankGlob;
+    const delta = lRank - currentRank;
+    const deltaText = delta > 0 ? `▲ o ${delta} příček přísnější` : delta < 0 ? `▼ o ${Math.abs(delta)} příček mírnější` : `✓ Přesná shoda`;
 
     if (tooltipBox) {
       tooltipBox.innerHTML = `
@@ -816,7 +934,8 @@
             <span style="color:var(--text-muted); font-size:0.85rem;">(${crime.paragraph})</span>
           </div>
           <div style="display:flex; gap:0.75rem; align-items:center; font-size:0.85rem; flex-wrap:wrap;">
-            <span style="color:#38bdf8; font-weight:700;">👥 Veřejnost: #${pRank}</span>
+            <span style="color:#38bdf8; font-weight:700;">👥 Veřejnost: #${pRankGlob}</span>
+            <span style="color:#c084fc; font-weight:700;">👤 Vy: #${pRankUser}</span>
             <span style="color:var(--text-muted);">➔</span>
             <span style="color:#fbbf24; font-weight:700;">⚖️ Zákoník: #${lRank}</span>
             <span style="color:var(--text-muted);">➔</span>
@@ -843,14 +962,14 @@
 
     const tooltipBox = document.getElementById("flow-hover-tooltip-box");
     if (tooltipBox) {
-      const totalVotes = Math.round(Object.values(state.crimeScores).reduce((sum, s) => sum + (s.matches || 0), 0) / 2);
       tooltipBox.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:0.5rem; font-size:0.85rem;">
           <div>
             <strong style="color:var(--text-primary);">Vysvětlivky sloupců:</strong> 
-            <span style="color:#38bdf8; font-weight:600;">👥 Veřejnost (${totalVotes} duelů)</span> • 
-            <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link" style="color:#fbbf24; font-weight:600; text-decoration:underline;">⚖️ Trestní zákoník ČR (z. č. 40/2009 Sb.) ↗</a> • 
-            <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="footer-link" style="color:#34d399; font-weight:600; text-decoration:underline;">🏛️ Soudní praxe (JakTrestame.cz) ↗</a>
+            <span style="color:#38bdf8; font-weight:600;">👥 Veřejnost (${state.totalGlobalVotes} duelů v databázi)</span> • 
+            <span style="color:#c084fc; font-weight:600;">👤 Vaše hra (${state.totalDilemmasAnswered} duelů)</span> • 
+            <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link" style="color:#fbbf24; font-weight:600; text-decoration:underline;">⚖️ Trestní zákoník ČR ↗</a> • 
+            <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="footer-link" style="color:#34d399; font-weight:600; text-decoration:underline;">🏛️ Soudní praxe ↗</a>
           </div>
           <span style="color:var(--text-muted); font-style:italic;">💡 Najeďte myší na delikt pro zvýraznění toku</span>
         </div>
@@ -864,12 +983,10 @@
 
     let crimes = [...window.CRIMES_DATA];
 
-    if (state.rankingSortMode === "userVotes") {
-      crimes.sort((a, b) => {
-        const scoreA = getCrimeScore(a.id).elo;
-        const scoreB = getCrimeScore(b.id).elo;
-        return scoreB - scoreA;
-      });
+    if (state.rankingSortMode === "globalPublic") {
+      crimes.sort((a, b) => getGlobalScore(b.id).elo - getGlobalScore(a.id).elo);
+    } else if (state.rankingSortMode === "userVotes") {
+      crimes.sort((a, b) => getUserScore(b.id).elo - getUserScore(a.id).elo);
     } else if (state.rankingSortMode === "statutory") {
       crimes.sort((a, b) => {
         const isPrestA = a.delictType === "prestupek";
@@ -890,9 +1007,10 @@
     let html = "";
     crimes.forEach((crime, index) => {
       const rankClass = index === 0 ? "top-1" : index === 1 ? "top-2" : index === 2 ? "top-3" : "";
-      const scoreObj = getCrimeScore(crime.id);
-      const userElo = Math.round(scoreObj.elo || 1000);
-      const matches = scoreObj.matches || 0;
+      const globScore = getGlobalScore(crime.id);
+      const userScore = getUserScore(crime.id);
+      const globElo = Math.round(globScore.elo || 1000);
+      const userElo = Math.round(userScore.elo || 1000);
 
       html += `
         <div class="ranking-item">
@@ -902,7 +1020,8 @@
             <div class="rank-crime-meta">
               <span>${crime.paragraph}</span> • 
               <span>${crime.categoryLabel}</span> • 
-              <span style="color:var(--accent-primary)">Elo: ${userElo} (${matches} zápasů)</span>
+              <span style="color:#38bdf8; font-weight:600;">👥 Veřejnost: ${globElo} (${globScore.matches}x)</span> • 
+              <span style="color:#c084fc; font-weight:600;">👤 Vaše hra: ${userElo} (${userScore.matches}x)</span>
             </div>
           </div>
           <div class="rank-statutory">
@@ -1087,6 +1206,11 @@
     document.getElementById("btn-view-list")?.addEventListener("click", () => setRankingViewMode("list"));
     document.getElementById("btn-view-flow")?.addEventListener("click", () => setRankingViewMode("flow"));
 
+    // Event listenery pro přepínání perspektivy Flow grafu (Veřejnost vs Vaše hlasy)
+    document.querySelectorAll(".flow-perspective-btn").forEach(btn => {
+      btn.addEventListener("click", () => setFlowPerspective(btn.dataset.perspective));
+    });
+
     // Event listenery pro řazení v žebříčku
     document.querySelectorAll(".ranking-toggle-btn").forEach(btn => {
       btn.addEventListener("click", () => setRankingSort(btn.dataset.sort));
@@ -1139,8 +1263,21 @@
     state.totalDilemmasAnswered = 0;
     state.agreedWithLawCount = 0;
     state.agreedWithCourtsCount = 0;
+    state.userScores = {};
+    window.CRIMES_DATA.forEach(crime => {
+      const baseElo = (window.DEFAULT_CRIME_SCORES && window.DEFAULT_CRIME_SCORES[crime.id]) 
+        ? window.DEFAULT_CRIME_SCORES[crime.id].elo 
+        : (1000 + (crime.harmAnalysis.harmScore * 8));
+      state.userScores[crime.id] = {
+        elo: baseElo,
+        wins: 0,
+        matches: 0
+      };
+    });
+    saveStoredUserScores();
     saveStoredStats();
     renderProfileView();
+    renderRankingView();
     updateDuelCounter();
     loadNewDuel();
   }
@@ -1153,6 +1290,7 @@
     switchTab,
     setRankingSort,
     setRankingViewMode,
+    setFlowPerspective,
     highlightCrimeFlow,
     resetCrimeFlow,
     resetUserStats,

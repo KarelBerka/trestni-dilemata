@@ -150,14 +150,25 @@
         </div>
 
         <div class="ranking-toggle-group" id="ranking-sort-controls" style="display: none;">
-          <button class="ranking-toggle-btn active" data-sort="userVotes">👥 Veřejnost (Elo)</button>
-          <button class="ranking-toggle-btn" data-sort="statutory">⚖️ Trestní zákoník</button>
-          <button class="ranking-toggle-btn" data-sort="courtSentence">🏛️ Soudní praxe</button>
+          <button class="ranking-toggle-btn active" data-sort="globalPublic" id="btn-sort-public">👥 Veřejnost (Globální)</button>
+          <button class="ranking-toggle-btn" data-sort="userVotes" id="btn-sort-user">👤 Vaše hlasy (Lokální)</button>
+          <button class="ranking-toggle-btn" data-sort="statutory" id="btn-sort-law">⚖️ Trestní zákoník</button>
+          <button class="ranking-toggle-btn" data-sort="courtSentence" id="btn-sort-courts">🏛️ Soudní praxe</button>
         </div>
       </div>
 
       <!-- FLOW GRAF SROVNÁNÍ (BUMP / PARALLEL RANK CHART - DEFAULT) -->
       <div id="ranking-flow-wrapper">
+        <!-- Přepínač datového zdroje 1. sloupce -->
+        <div class="flow-perspective-toggle">
+          <button class="flow-perspective-btn active" data-perspective="public" id="btn-flow-persp-public">
+            <span>👥 Sloupec 1: Veřejnost (Globální data ze Supabase)</span>
+          </button>
+          <button class="flow-perspective-btn" data-perspective="user" id="btn-flow-persp-user">
+            <span>👤 Sloupec 1: Vaše hlasy (Lokální hra)</span>
+          </button>
+        </div>
+
         <!-- Insight box s popisem vybraného deliktu při hoveru -->
         <div id="flow-hover-tooltip-box" class="flow-interactive-legend">
           <span>💡 Najeďte kurzorem na delikt nebo linii pro zvýraznění jeho toku napříč všemi 3 žebříčky.</span>
