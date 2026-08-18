@@ -779,30 +779,30 @@
         <!-- Sloupcové hlavičky s vysvětlivkami a odkazy -->
         <g class="flow-headers">
           <!-- 1. Veřejnost / Vaše hlasy -->
-          <rect x="20" y="15" width="300" height="58" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+          <rect x="20" y="15" width="300" height="58" rx="8" fill="var(--bg-surface-raised)" stroke="var(--border-medium)" stroke-width="1"/>
           <text x="170" y="37" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif">${firstColTitle}</text>
-          <text x="170" y="58" fill="#94a3b8" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif">${firstColSub}</text>
+          <text x="170" y="58" fill="var(--text-secondary)" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif">${firstColSub}</text>
 
           <!-- 2. Trestní zákoník -->
           <a xlink:href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank">
-            <rect x="390" y="15" width="320" height="58" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" style="cursor:pointer;"/>
+            <rect x="390" y="15" width="320" height="58" rx="8" fill="var(--bg-surface-raised)" stroke="var(--border-medium)" stroke-width="1" style="cursor:pointer;"/>
             <text x="550" y="37" fill="#fbbf24" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif" style="cursor:pointer;">⚖️ 2. Trestní zákoník ČR</text>
             <text x="550" y="58" fill="#facc15" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif" style="text-decoration:underline; cursor:pointer;">Zákon č. 40/2009 Sb. ↗</text>
           </a>
 
           <!-- 3. Soudní praxe -->
           <a xlink:href="https://jaktrestame.cz" target="_blank">
-            <rect x="780" y="15" width="340" height="58" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1" style="cursor:pointer;"/>
+            <rect x="780" y="15" width="340" height="58" rx="8" fill="var(--bg-surface-raised)" stroke="var(--border-medium)" stroke-width="1" style="cursor:pointer;"/>
             <text x="950" y="37" fill="#34d399" font-size="14" font-weight="700" text-anchor="middle" font-family="system-ui, sans-serif" style="cursor:pointer;">🏛️ 3. Reálná soudní praxe</text>
             <text x="950" y="58" fill="#34d399" font-size="12" font-weight="600" text-anchor="middle" font-family="system-ui, sans-serif" style="text-decoration:underline; cursor:pointer;">Otevřená data JakTrestame.cz ↗</text>
           </a>
         </g>
 
         <!-- Vodící vertikální čáry pro přehlednost -->
-        <line x1="${xP_dot}" y1="${topPadding - 10}" x2="${xP_dot}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
-        <line x1="${xL_dotIn}" y1="${topPadding - 10}" x2="${xL_dotIn}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
-        <line x1="${xL_dotOut}" y1="${topPadding - 10}" x2="${xL_dotOut}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
-        <line x1="${xC_dot}" y1="${topPadding - 10}" x2="${xC_dot}" y2="${svgHeight - 20}" stroke="#334155" stroke-dasharray="3 3" opacity="0.3"/>
+        <line x1="${xP_dot}" y1="${topPadding - 10}" x2="${xP_dot}" y2="${svgHeight - 20}" stroke="var(--border-medium)" stroke-dasharray="3 3" opacity="0.35"/>
+        <line x1="${xL_dotIn}" y1="${topPadding - 10}" x2="${xL_dotIn}" y2="${svgHeight - 20}" stroke="var(--border-medium)" stroke-dasharray="3 3" opacity="0.35"/>
+        <line x1="${xL_dotOut}" y1="${topPadding - 10}" x2="${xL_dotOut}" y2="${svgHeight - 20}" stroke="var(--border-medium)" stroke-dasharray="3 3" opacity="0.35"/>
+        <line x1="${xC_dot}" y1="${topPadding - 10}" x2="${xC_dot}" y2="${svgHeight - 20}" stroke="var(--border-medium)" stroke-dasharray="3 3" opacity="0.35"/>
 
         <!-- Flow křivky a skupiny deliktů -->
         <g id="flow-groups-container">
@@ -838,25 +838,25 @@
 
           <!-- 1. Veřejnost / Vaše hlasy Sloupec -->
           <g class="flow-node-group">
-            <text x="${xP_text}" y="${yP + 4}" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif" text-anchor="end">
+            <text x="${xP_text}" y="${yP + 4}" fill="var(--text-primary)" font-size="12" font-family="system-ui, sans-serif" text-anchor="end">
               <tspan fill="#38bdf8" font-weight="700">#${pRank}</tspan> ${shortName}
             </text>
-            <circle class="flow-node-circle" cx="${xP_dot}" cy="${yP}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
+            <circle class="flow-node-circle" cx="${xP_dot}" cy="${yP}" r="4.5" fill="${color}" stroke="var(--bg-surface)" stroke-width="1.5"/>
           </g>
 
           <!-- 2. Zákoník Sloupec -->
           <g class="flow-node-group">
-            <circle class="flow-node-circle" cx="${xL_dotIn}" cy="${yL}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
-            <text x="${xL_text}" y="${yL + 4}" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">
+            <circle class="flow-node-circle" cx="${xL_dotIn}" cy="${yL}" r="4.5" fill="${color}" stroke="var(--bg-surface)" stroke-width="1.5"/>
+            <text x="${xL_text}" y="${yL + 4}" fill="var(--text-primary)" font-size="12" font-family="system-ui, sans-serif" text-anchor="middle">
               <tspan fill="#fbbf24" font-weight="700">#${lRank}</tspan> ${shortName}
             </text>
-            <circle class="flow-node-circle" cx="${xL_dotOut}" cy="${yL}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
+            <circle class="flow-node-circle" cx="${xL_dotOut}" cy="${yL}" r="4.5" fill="${color}" stroke="var(--bg-surface)" stroke-width="1.5"/>
           </g>
 
           <!-- 3. Soudy Sloupec -->
           <g class="flow-node-group">
-            <circle class="flow-node-circle" cx="${xC_dot}" cy="${yC}" r="4.5" fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
-            <text x="${xC_text}" y="${yC + 4}" fill="#cbd5e1" font-size="12" font-family="system-ui, sans-serif" text-anchor="start">
+            <circle class="flow-node-circle" cx="${xC_dot}" cy="${yC}" r="4.5" fill="${color}" stroke="var(--bg-surface)" stroke-width="1.5"/>
+            <text x="${xC_text}" y="${yC + 4}" fill="var(--text-primary)" font-size="12" font-family="system-ui, sans-serif" text-anchor="start">
               <tspan fill="#34d399" font-weight="700">#${cRank}</tspan> ${shortName} (${courtTxt})
             </text>
           </g>
@@ -1222,6 +1222,78 @@
 
     // GDPR Cookie lišta
     initCookieBanner();
+
+    // Přepínač motivu (Světlý / Tmavý)
+    initTheme();
+  }
+
+  // =========================================================================
+  // SPRÁVA TÉMATU (SVĚTLÝ / TMAVÝ REŽIM)
+  // =========================================================================
+
+  function getCurrentTheme() {
+    const docTheme = document.documentElement.getAttribute("data-theme");
+    if (docTheme === "light" || docTheme === "dark") return docTheme;
+    const stored = localStorage.getItem("tresty_theme");
+    if (stored === "light" || stored === "dark") return stored;
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+      return "light";
+    }
+    return "dark";
+  }
+
+  function updateThemeToggleUI(theme) {
+    const iconEl = document.getElementById("theme-toggle-icon");
+    const textEl = document.getElementById("theme-toggle-text");
+    const btnEl = document.getElementById("theme-toggle-btn");
+
+    const isLight = theme === "light";
+    if (iconEl) iconEl.textContent = isLight ? "☀️" : "🌙";
+    if (textEl) textEl.textContent = isLight ? "Světlý" : "Tmavý";
+    if (btnEl) {
+      btnEl.setAttribute("aria-label", isLight ? "Přepnout na tmavý režim" : "Přepnout na světlý režim");
+      btnEl.setAttribute("title", isLight ? "Přepnout na tmavý režim" : "Přepnout na světlý režim");
+    }
+  }
+
+  function setTheme(theme) {
+    const validTheme = theme === "light" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", validTheme);
+    try {
+      localStorage.setItem("tresty_theme", validTheme);
+    } catch (e) {}
+    updateThemeToggleUI(validTheme);
+
+    // Pokud je aktivní flow graf v žebříčku, aktualizujeme jej
+    if (state.rankingViewMode === "flow") {
+      const svgContainer = document.getElementById("flow-svg-container");
+      if (svgContainer && svgContainer.children.length > 0) {
+        renderRankingView();
+      }
+    }
+  }
+
+  function toggleTheme() {
+    const current = getCurrentTheme();
+    const nextTheme = current === "light" ? "dark" : "light";
+    setTheme(nextTheme);
+  }
+
+  function initTheme() {
+    const initialTheme = getCurrentTheme();
+    setTheme(initialTheme);
+
+    const btn = document.getElementById("theme-toggle-btn");
+    btn?.addEventListener("click", toggleTheme);
+
+    // Sledování změn systémového motivu (pokud uživatel neuložil explicitní preferenci)
+    if (window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", e => {
+        if (!localStorage.getItem("tresty_theme")) {
+          setTheme(e.matches ? "dark" : "light");
+        }
+      });
+    }
   }
 
   // =========================================================================
@@ -1294,6 +1366,9 @@
     highlightCrimeFlow,
     resetCrimeFlow,
     resetUserStats,
+    setTheme,
+    toggleTheme,
+    getCurrentTheme,
     handleCookieConsent,
     openPrivacyModal,
     closePrivacyModal

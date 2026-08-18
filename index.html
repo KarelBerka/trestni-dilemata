@@ -30,6 +30,17 @@
   </script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-PFKRMMBBPY"></script>
 
+  <!-- Theme Initialization (prevents FOUT) -->
+  <script>
+    (function() {
+      try {
+        const savedTheme = localStorage.getItem('tresty_theme');
+        const theme = savedTheme || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,6 +83,13 @@
           <span>Profil soudce</span>
         </button>
       </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" type="button" aria-label="Přepnout světlý / tmavý režim" title="Přepnout světlý / tmavý režim">
+          <span class="theme-toggle-icon" id="theme-toggle-icon">🌙</span>
+          <span class="theme-toggle-text" id="theme-toggle-text">Tmavý</span>
+        </button>
+      </div>
     </div>
   </header>
 
