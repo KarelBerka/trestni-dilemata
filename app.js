@@ -664,13 +664,23 @@
     const firstColRanks = {};
     firstColSorted.forEach((c, idx) => { firstColRanks[c.id] = idx + 1; });
 
+    // Aktualizace popisků tlačítek s živými počty hlasů
+    const btnPub = document.getElementById("btn-flow-persp-public");
+    const btnUsr = document.getElementById("btn-flow-persp-user");
+    if (btnPub) btnPub.innerHTML = `<span>👥 Sloupec 1: Veřejnost (${state.totalGlobalVotes} hlasů v databázi)</span>`;
+    if (btnUsr) btnUsr.innerHTML = `<span>👤 Sloupec 1: Vaše hlasy (${state.totalDilemmasAnswered} odehraných duelů)</span>`;
+    const btnSortPub = document.getElementById("btn-sort-public");
+    const btnSortUsr = document.getElementById("btn-sort-user");
+    if (btnSortPub) btnSortPub.textContent = `👥 Veřejnost (${state.totalGlobalVotes} hlasů)`;
+    if (btnSortUsr) btnSortUsr.textContent = `👤 Vaše hlasy (${state.totalDilemmasAnswered} duelů)`;
+
     // Globální a uživatelské pořadí pro tooltip
     const globRanks = {};
     [...crimes].sort((a, b) => getGlobalScore(b.id).elo - getGlobalScore(a.id).elo).forEach((c, idx) => { globRanks[c.id] = idx + 1; });
     const userRanks = {};
     [...crimes].sort((a, b) => getUserScore(b.id).elo - getUserScore(a.id).elo).forEach((c, idx) => { userRanks[c.id] = idx + 1; });
 
-    // 2. Spočítáme pořadí podle Trestního zákoníku (Sazba)
+    // 2. Spočítáme pořadí podle Trestního zákoníku
     const lawSorted = [...crimes].sort((a, b) => {
       const isPrestA = a.delictType === "prestupek";
       const isPrestB = b.delictType === "prestupek";
@@ -771,8 +781,8 @@
 
     const firstColTitle = isUserPersp ? "👤 1. Vaše hlasy" : "👥 1. Hlasování veřejnosti";
     const firstColSub = isUserPersp 
-      ? `Odehráno ${state.totalDilemmasAnswered} duelů (tato hra)` 
-      : `Celkem ${state.totalGlobalVotes} duelů (Supabase)`;
+      ? `Odehráno ${state.totalDilemmasAnswered} vašich duelů` 
+      : `Celkem ${state.totalGlobalVotes} hlasů (Supabase)`;
 
     let svgHtml = `
       <svg class="flow-svg-canvas" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -828,7 +838,8 @@
       const path2 = `M ${xL_dotOut} ${yL} C ${c3x} ${yL}, ${c4x} ${yC}, ${xC_dot} ${yC}`;
 
       const courtTxt = isPrest ? 'Správní' : crime.courtStats.unconditionalPrisonPct + ' % vězení';
-      const shortName = crime.name.length > 24 ? (crime.name.substring(0, 22) + '…') : crime.name;
+      const shortName = crime.name.length > 20 ? (crime.name.substring(0, 18) + '…') : crime.name;
+      const pScore = isUserPersp ? getUserScore(crime.id) : getGlobalScore(crime.id);
 
       svgHtml += `
         <g class="flow-crime-group" data-crime-id="${crime.id}" onmouseenter="window.App.highlightCrimeFlow('${crime.id}')" onmouseleave="window.App.resetCrimeFlow()" onclick="window.App.highlightCrimeFlow('${crime.id}')" style="transition: opacity 0.2s ease;">
@@ -843,7 +854,7 @@
           <!-- 1. Veřejnost / Vaše hlasy Sloupec -->
           <g class="flow-node-group">
             <text x="${xP_text}" y="${yP + 4}" fill="var(--text-primary)" font-size="12" font-family="system-ui, sans-serif" text-anchor="end">
-              <tspan fill="#38bdf8" font-weight="700">#${pRank}</tspan> ${shortName}
+              <tspan fill="#38bdf8" font-weight="700">#${pRank}</tspan> ${shortName} <tspan fill="var(--text-muted)" font-size="10.5" font-weight="500">(${pScore.matches}×)</tspan>
             </text>
             <circle class="flow-node-circle" cx="${xP_dot}" cy="${yP}" r="4.5" fill="${color}" stroke="var(--bg-surface)" stroke-width="1.5"/>
           </g>
@@ -917,6 +928,9 @@
     const isUserPersp = state.flowFirstColumnMode === "user";
     const pRankGlob = [...window.CRIMES_DATA].sort((a, b) => getGlobalScore(b.id).elo - getGlobalScore(a.id).elo).findIndex(c => c.id === crimeId) + 1;
     const pRankUser = [...window.CRIMES_DATA].sort((a, b) => getUserScore(b.id).elo - getUserScore(a.id).elo).findIndex(c => c.id === crimeId) + 1;
+    const pScoreGlob = getGlobalScore(crimeId);
+    const pScoreUser = getUserScore(crimeId);
+
     const lRank = [...window.CRIMES_DATA].sort((a, b) => {
       const isPrestA = a.delictType === "prestupek";
       const isPrestB = b.delictType === "prestupek";
@@ -946,9 +960,9 @@
             <span class="delta-badge ${deltaClass}">${deltaText}</span>
           </div>
           <div class="flow-tooltip-meta">
-            <span class="flow-meta-item public">👥 Veřejnost: <strong>#${pRankGlob}</strong></span>
+            <span class="flow-meta-item public">👥 Veřejnost: <strong>#${pRankGlob}</strong> (${pScoreGlob.matches} hlasů, ${pScoreGlob.wins}× výhra)</span>
             <span class="flow-meta-sep">➔</span>
-            <span class="flow-meta-item user">👤 Vy: <strong>#${pRankUser}</strong></span>
+            <span class="flow-meta-item user">👤 Vy: <strong>#${pRankUser}</strong> (${pScoreUser.matches} duelů, ${pScoreUser.wins}× výhra)</span>
             <span class="flow-meta-sep">➔</span>
             <span class="flow-meta-item law">⚖️ Zákoník: <strong>#${lRank}</strong></span>
             <span class="flow-meta-sep">➔</span>
@@ -1041,8 +1055,8 @@
             <div class="rank-crime-meta">
               <span>${crime.paragraph}</span> • 
               <span>${crime.categoryLabel}</span> • 
-              <span style="color:#38bdf8; font-weight:600;">👥 Veřejnost: ${globElo} (${globScore.matches}x)</span> • 
-              <span style="color:#c084fc; font-weight:600;">👤 Vaše hra: ${userElo} (${userScore.matches}x)</span>
+              <span style="color:#38bdf8; font-weight:600;">👥 Veřejnost: ${globElo} Elo (${globScore.matches} hlasů, ${globScore.wins}× výhra)</span> • 
+              <span style="color:#c084fc; font-weight:600;">👤 Vaše hra: ${userElo} Elo (${userScore.matches} duelů, ${userScore.wins}× výhra)</span>
             </div>
           </div>
           <div class="rank-statutory">
