@@ -831,7 +831,11 @@
       const shortName = crime.name.length > 24 ? (crime.name.substring(0, 22) + '…') : crime.name;
 
       svgHtml += `
-        <g class="flow-crime-group" data-crime-id="${crime.id}" onmouseenter="window.App.highlightCrimeFlow('${crime.id}')" onmouseleave="window.App.resetCrimeFlow()" style="transition: opacity 0.2s ease;">
+        <g class="flow-crime-group" data-crime-id="${crime.id}" onmouseenter="window.App.highlightCrimeFlow('${crime.id}')" onmouseleave="window.App.resetCrimeFlow()" onclick="window.App.highlightCrimeFlow('${crime.id}')" style="transition: opacity 0.2s ease;">
+          <!-- Širší transparentní zóna pro stabilní a plynulý hover na křivkách -->
+          <path d="${path1}" stroke="transparent" stroke-width="18" fill="none" style="cursor:pointer;"/>
+          <path d="${path2}" stroke="transparent" stroke-width="18" fill="none" style="cursor:pointer;"/>
+
           <!-- Flow spojnice -->
           <path class="flow-path flow-path-1" d="${path1}" stroke="${color}" stroke-width="2.2" opacity="0.45"/>
           <path class="flow-path flow-path-2" d="${path2}" stroke="${color}" stroke-width="2.2" opacity="0.45"/>
@@ -873,7 +877,12 @@
     resetCrimeFlow();
   }
 
+  let currentHighlightedCrimeId = null;
+
   function highlightCrimeFlow(crimeId) {
+    if (currentHighlightedCrimeId === crimeId) return;
+    currentHighlightedCrimeId = crimeId;
+
     const groups = document.querySelectorAll(".flow-crime-group");
     const crime = window.CRIMES_DATA.find(c => c.id === crimeId);
     if (!crime) return;
@@ -924,23 +933,26 @@
 
     const currentRank = isUserPersp ? pRankUser : pRankGlob;
     const delta = lRank - currentRank;
-    const deltaText = delta > 0 ? `▲ o ${delta} příček přísnější` : delta < 0 ? `▼ o ${Math.abs(delta)} příček mírnější` : `✓ Přesná shoda`;
+    const deltaClass = delta > 0 ? 'stricter-public' : delta < 0 ? 'milder-public' : 'balanced';
+    const deltaText = delta > 0 ? `▲ o ${delta} přísnější než zákon` : delta < 0 ? `▼ o ${Math.abs(delta)} mírnější než zákon` : `✓ Shoda se zákonem`;
 
     if (tooltipBox) {
       tooltipBox.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:0.5rem;">
-          <div>
-            <strong style="color:var(--text-primary); font-size:1rem;">${crime.name}</strong> 
-            <span style="color:var(--text-muted); font-size:0.85rem;">(${crime.paragraph})</span>
+        <div class="flow-tooltip-content">
+          <div class="flow-tooltip-title">
+            <span class="flow-tooltip-icon">⚖️</span>
+            <strong class="flow-tooltip-crime-name">${crime.name}</strong> 
+            <span class="flow-tooltip-paragraph">(${crime.paragraph})</span>
+            <span class="delta-badge ${deltaClass}">${deltaText}</span>
           </div>
-          <div style="display:flex; gap:0.75rem; align-items:center; font-size:0.85rem; flex-wrap:wrap;">
-            <span style="color:#38bdf8; font-weight:700;">👥 Veřejnost: #${pRankGlob}</span>
-            <span style="color:#c084fc; font-weight:700;">👤 Vy: #${pRankUser}</span>
-            <span style="color:var(--text-muted);">➔</span>
-            <span style="color:#fbbf24; font-weight:700;">⚖️ Zákoník: #${lRank}</span>
-            <span style="color:var(--text-muted);">➔</span>
-            <span style="color:#34d399; font-weight:700;">🏛️ Soudy: #${cRank}</span>
-            <span class="delta-badge ${delta > 0 ? 'stricter-public' : delta < 0 ? 'milder-public' : 'balanced'}" style="margin-left:0.5rem;">${deltaText}</span>
+          <div class="flow-tooltip-meta">
+            <span class="flow-meta-item public">👥 Veřejnost: <strong>#${pRankGlob}</strong></span>
+            <span class="flow-meta-sep">➔</span>
+            <span class="flow-meta-item user">👤 Vy: <strong>#${pRankUser}</strong></span>
+            <span class="flow-meta-sep">➔</span>
+            <span class="flow-meta-item law">⚖️ Zákoník: <strong>#${lRank}</strong></span>
+            <span class="flow-meta-sep">➔</span>
+            <span class="flow-meta-item courts">🏛️ Soudy: <strong>#${cRank}</strong></span>
           </div>
         </div>
       `;
@@ -948,6 +960,9 @@
   }
 
   function resetCrimeFlow() {
+    if (currentHighlightedCrimeId === null) return;
+    currentHighlightedCrimeId = null;
+
     const groups = document.querySelectorAll(".flow-crime-group");
     groups.forEach(g => {
       g.classList.remove("flow-highlighted", "flow-dimmed");
@@ -963,15 +978,21 @@
     const tooltipBox = document.getElementById("flow-hover-tooltip-box");
     if (tooltipBox) {
       tooltipBox.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:0.5rem; font-size:0.85rem;">
-          <div>
-            <strong style="color:var(--text-primary);">Vysvětlivky sloupců:</strong> 
-            <span style="color:#38bdf8; font-weight:600;">👥 Veřejnost (${state.totalGlobalVotes} duelů v databázi)</span> • 
-            <span style="color:#c084fc; font-weight:600;">👤 Vaše hra (${state.totalDilemmasAnswered} duelů)</span> • 
-            <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="footer-link" style="color:#fbbf24; font-weight:600; text-decoration:underline;">⚖️ Trestní zákoník ČR ↗</a> • 
-            <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="footer-link" style="color:#34d399; font-weight:600; text-decoration:underline;">🏛️ Soudní praxe ↗</a>
+        <div class="flow-tooltip-content">
+          <div class="flow-tooltip-title">
+            <span class="flow-tooltip-icon">💡</span>
+            <strong>Interaktivní srovnání trestů</strong>
+            <span class="flow-tooltip-hint">Najeďte myší nebo klepněte na delikt pro zvýraznění toku</span>
           </div>
-          <span style="color:var(--text-muted); font-style:italic;">💡 Najeďte myší na delikt pro zvýraznění toku</span>
+          <div class="flow-tooltip-meta">
+            <span class="flow-meta-item public">👥 Veřejnost (${state.totalGlobalVotes} duelů)</span>
+            <span class="flow-meta-sep">•</span>
+            <span class="flow-meta-item user">👤 Vaše hra (${state.totalDilemmasAnswered} duelů)</span>
+            <span class="flow-meta-sep">•</span>
+            <a href="https://www.zakonyprolidi.cz/cs/2009-40" target="_blank" rel="noopener" class="flow-meta-item law" style="text-decoration:underline;">⚖️ Zákoník ČR ↗</a>
+            <span class="flow-meta-sep">•</span>
+            <a href="https://jaktrestame.cz" target="_blank" rel="noopener" class="flow-meta-item courts" style="text-decoration:underline;">🏛️ Soudní praxe ↗</a>
+          </div>
         </div>
       `;
     }
