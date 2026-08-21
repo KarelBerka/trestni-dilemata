@@ -769,8 +769,12 @@
       ZivotZdravi: "#f43f5e",
       SvobodaDostojnost: "#c084fc",
       MajetekHospodarstvi: "#38bdf8",
+      Majetek: "#38bdf8",
+      Hospodarske: "#38bdf8",
       DopravaZivotniProstredi: "#34d399",
       StatPoradek: "#facc15",
+      VerejnyPoradek: "#facc15",
+      Prestupky: "#fb923c",
       prestupek: "#fb923c"
     };
 

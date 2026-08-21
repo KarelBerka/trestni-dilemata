@@ -680,6 +680,81 @@ const CRIMES_DATA = [
     }
   },
   {
+    id: "obchodovani-lidmi",
+    name: "Obchodování s lidmi (nucená práce a vykořisťování)",
+    paragraph: "§ 168 odst. 1, 2 TZ",
+    category: "SvobodaDostojnost",
+    categoryLabel: "Trestné činy proti svobodě a lidské důstojnosti",
+    scenario: "Pachatelé pod falešným příslibem výhodné práce vylákali do ČR zahraniční dělníky, odebrali jim pasy, ubytovali je v nedůstojných podmínkách a pod hrozbou fyzického násilí a fiktivního dluhu je nutili k otrocké práci bez mzdy.",
+    legalText: "Kdo jiného přiměje, zjedná, najme, zláká, přepraví, ukryje nebo vydá, aby ho bylo užito k nuceným pracím nebo k jiným formám vykořisťování, bude potrestán odnětím svobody na dvě léta až deset let.",
+    statutoryMinYears: 2,
+    statutoryMaxYears: 10,
+    statutoryText: "2 až 10 let odnětí svobody",
+    courtStats: {
+      unconditionalPrisonPct: 68,
+      probationPct: 32,
+      finePct: 0,
+      otherPct: 0,
+      avgPrisonSentenceMonths: 58, // cca 4,8 roku
+      avgSentenceDescription: "Soudy pohlížejí na organizované vykořisťování lidí velmi přísně; většina pachatelů odchází s nepodmíněným trestem okolo 5 let vězení a propadnutím majetku."
+    },
+    harmAnalysis: {
+      victimHarm: "Naprosté zbavení lidské důstojnosti a osobní svobody, fyzické a psychické vyčerpání, hluboké trauma z dlouhodobé bezmoci a manipulace.",
+      societalImpact: "Hrubé popření základních lidských práv a principu svobodné společnosti; napojení na organizovaný mezinárodní zločin a stínovou ekonomiku.",
+      harmScore: 89
+    }
+  },
+  {
+    id: "utok-proti-lidskosti",
+    name: "Útok proti lidskosti (masové perzekuce / vyhlazování)",
+    paragraph: "§ 401 odst. 1 TZ",
+    category: "ZivotZdravi",
+    categoryLabel: "Trestné činy proti lidskosti a míru",
+    scenario: "Velitel ozbrojené skupiny v rámci rozsáhlého a systematického útoku proti civilnímu obyvatelstvu nařídil nucené deportace celých vesnic, masové mučení v internačních táborech a popravy odpůrců z etnických a politických důvodů.",
+    legalText: "Kdo se v rámci rozsáhlého nebo systematického útoku zaměřeného proti civilnímu obyvatelstvu dopustí vyhlazování, zotročování, deportace, mučení, znásilnění nebo perzekuce, bude potrestán na dvanáct až dvacet let nebo výjimečným trestem.",
+    statutoryMinYears: 12,
+    statutoryMaxYears: 30, // výjimečný trest až doživotí
+    statutoryText: "12 až 20 let, popř. výjimečný trest (20–30 let / doživotí)",
+    courtStats: {
+      unconditionalPrisonPct: 100,
+      probationPct: 0,
+      finePct: 0,
+      otherPct: 0,
+      avgPrisonSentenceMonths: 240, // 20 let až doživotí
+      avgSentenceDescription: "Jedná se o nejzávažnější mezinárodní zločiny; podmíněný trest je vyloučen a ukládají se výhradně nejpřísnější tresty na horní hranici či doživotí."
+    },
+    harmAnalysis: {
+      victimHarm: "Masová ztráta lidských životů, systematická destrukce rodin, komunit a lidské důstojnosti, nevratná historická a psychologická traumata pro celé generace.",
+      societalImpact: "Absolutní rozpad civilizačních a právních hodnot; ohrožení míru a samotné existence lidské společnosti.",
+      harmScore: 100
+    }
+  },
+  {
+    id: "omezovani-osobni-svobody",
+    name: "Omezování osobní svobody (zadržení a uzamčení)",
+    paragraph: "§ 171 odst. 1 TZ",
+    category: "SvobodaDostojnost",
+    categoryLabel: "Trestné činy proti svobodě",
+    scenario: "Pachatel po prudké hádce zamkl svou bývalou partnerku v bytě, odebral jí mobilní telefon i klíče a po dobu 24 hodin jí pod pohrůžkou násilí bránil v odchodu a kontaktu s okolím.",
+    legalText: "Kdo jinému bez oprávnění brání užívat osobní svobody, bude potrestán odnětím svobody až na dvě léta.",
+    statutoryMinYears: 0,
+    statutoryMaxYears: 2,
+    statutoryText: "až 2 roky odnětí svobody nebo podmíněné odsouzení",
+    courtStats: {
+      unconditionalPrisonPct: 26,
+      probationPct: 70,
+      finePct: 4,
+      otherPct: 0,
+      avgPrisonSentenceMonths: 14,
+      avgSentenceDescription: "U prvotrestaných pachatelů soudy obvykle ukládají podmíněný trest s dohledem a zákazem kontaktu; nepodmíněný trest hrozí recidivistům."
+    },
+    harmAnalysis: {
+      victimHarm: "Akutní strach, pocit bezmoci a uvěznění, psychické trauma ze ztráty kontroly nad vlastním pohybem a bezpečím.",
+      societalImpact: "Zásah do ústavně garantované osobní svobody pohybu a rozhodování jednotlivce.",
+      harmScore: 62
+    }
+  },
+  {
     id: "prestupek-drobna-kradez",
     name: "Krádež zboží v obchodě (škoda do 10 000 Kč)",
     paragraph: "§ 8 odst. 1 písm. a) zák. č. 251/2016 Sb.",
