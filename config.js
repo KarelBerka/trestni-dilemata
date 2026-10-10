@@ -3,11 +3,10 @@
  */
 
 window.TRESTY_CONFIG = {
-  // URL vašeho Supabase projektu (např. 'https://<project-ref>.supabase.co')
-  supabaseUrl: "https://byvjqnbpltjwcluigkfj.supabase.co", 
-
-  // Váš Publishable API klíč ze Supabase
-  supabaseAnonKey: "sb_publishable_IMAMxmi6B1ui_CposyQnGA_G_wZPVcd",
+  // URL vaší Google Apps Script webové aplikace (např. 'https://script.google.com/macros/s/AKfycb.../exec')
+  // Získáte po nasazení skriptu ze souboru google-apps-script.js do Google Tabulky.
+  // Ponechte prázdné "" pro běh v lokálním režimu (localStorage).
+  googleAppScriptUrl: "",
 
   // Nastavení chytrého párování (matchmakingu)
   matchmaking: {

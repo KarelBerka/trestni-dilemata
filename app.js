@@ -147,79 +147,63 @@
   }
 
   // =========================================================================
-  // CLOUDOVÁ SYNCHRONIZACE & GLOBÁLNÍ ELO VEŘEJNOSTI (SUPABASE REST API)
+  // =========================================================================
+  // CLOUDOVÁ SYNCHRONIZACE & GLOBÁLNÍ ELO VEŘEJNOSTI (GOOGLE APPS SCRIPT / CLOUD)
   // =========================================================================
 
   async function syncWithCloudDatabase() {
     const config = window.TRESTY_CONFIG;
-    if (!config || !config.supabaseUrl || !config.supabaseAnonKey || config.supabaseUrl.includes("vase-id") || config.supabaseUrl === "https://trestnidilemata.supabase.co") {
-      console.info("ℹ️ Supabase URL zatím není nastavena na platné ID projektu. Aplikace běží v lokálním režimu.");
+    const scriptUrl = config?.googleAppScriptUrl;
+
+    if (!scriptUrl || typeof scriptUrl !== "string" || !scriptUrl.startsWith("http")) {
+      console.info("ℹ️ Google Apps Script URL není nastavena. Aplikace běží v lokálním režimu.");
       state.isCloudConnected = false;
       updateCloudStatusBadge();
       return;
     }
 
     try {
-      // 1. Reset globálního Elo na baseline před započtením hlasů
       initGlobalScores();
 
-      // 2. Načteme všechny hlasy ze Supabase (s paginací po 1 000 záznamech)
-      let allVotes = [];
-      let page = 0;
-      const pageSize = 1000;
-
-      while (true) {
-        const from = page * pageSize;
-        const to = from + pageSize - 1;
-        const response = await fetch(`${config.supabaseUrl}/rest/v1/votes?select=winner_id,loser_id&order=created_at.asc`, {
-          method: "GET",
-          headers: {
-            "apikey": config.supabaseAnonKey,
-            "Authorization": `Bearer ${config.supabaseAnonKey}`,
-            "Range": `${from}-${to}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-        }
-
-        const data = await response.json();
-        if (!Array.isArray(data) || data.length === 0) break;
-        allVotes = allVotes.concat(data);
-        if (data.length < pageSize) break;
-        page++;
-      }
-
-      state.totalGlobalVotes = allVotes.length;
-      state.isCloudConnected = true;
-
-      // 3. Spočítáme reálné globální Elo veřejnosti ze všech odehraných duelů
-      const kFactor = 24;
-      allVotes.forEach(v => {
-        const wId = v.winner_id;
-        const lId = v.loser_id;
-        if (state.globalScores[wId] && state.globalScores[lId]) {
-          const scoreW = state.globalScores[wId];
-          const scoreL = state.globalScores[lId];
-          const expectedW = 1 / (1 + Math.pow(10, (scoreL.elo - scoreW.elo) / 400));
-          scoreW.elo += Math.round(kFactor * (1 - expectedW));
-          scoreL.elo += Math.round(kFactor * (0 - (1 - expectedW)));
-          scoreW.wins++;
-          scoreW.matches++;
-          scoreL.matches++;
+      const response = await fetch(scriptUrl, {
+        method: "GET",
+        headers: {
+          "Accept": "application/json"
         }
       });
 
-      console.log(`✅ Úspěšně načteno a přepočteno ${allVotes.length} hlasů veřejnosti ze Supabase.`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
 
-      // Pokud je zrovna otevřený žebříček, překreslíme jej s reálnými daty
-      const activeSec = document.querySelector(".view-section.active");
-      if (activeSec && activeSec.id === "view-ranking") {
-        renderRankingView();
+      const data = await response.json();
+      if (data && data.status === "success") {
+        state.totalGlobalVotes = data.totalVotes || 0;
+        state.isCloudConnected = true;
+
+        if (data.scores && typeof data.scores === "object") {
+          Object.keys(data.scores).forEach(crimeId => {
+            if (state.globalScores[crimeId]) {
+              const sc = data.scores[crimeId];
+              state.globalScores[crimeId].elo = Number(sc.elo) || state.globalScores[crimeId].elo;
+              state.globalScores[crimeId].wins = Number(sc.wins) || 0;
+              state.globalScores[crimeId].matches = Number(sc.matches) || 0;
+            }
+          });
+        }
+
+        console.log(`✅ Úspěšně načteno ${state.totalGlobalVotes} duelů z Google Sheets.`);
+
+        // Pokud je zrovna otevřený žebříček, překreslíme jej s reálnými daty
+        const activeSec = document.querySelector(".view-section.active");
+        if (activeSec && activeSec.id === "view-ranking") {
+          renderRankingView();
+        }
+      } else {
+        throw new Error(data?.message || "Neplatná odpověď z Google Apps Scriptu");
       }
     } catch (err) {
-      console.warn("⚠️ Nelze synchronizovat hlasy ze Supabase:", err.message);
+      console.warn("⚠️ Nelze synchronizovat data z Google Apps Scriptu:", err.message);
       state.isCloudConnected = false;
     }
 
@@ -228,31 +212,44 @@
 
   async function recordVoteToCloud(winnerId, loserId) {
     const config = window.TRESTY_CONFIG;
-    if (!config || !config.supabaseUrl || !config.supabaseAnonKey || !state.isCloudConnected) return;
+    const scriptUrl = config?.googleAppScriptUrl;
+
+    if (!scriptUrl || !state.isCloudConnected) return;
 
     try {
-      // Záznam jednotlivého hlasu do tabulky `votes`
-      const res = await fetch(`${config.supabaseUrl}/rest/v1/votes`, {
+      // Optimistický lokální posun celkového počtu hlasů a Elo skóre pro okamžitou odezvu UI
+      state.totalGlobalVotes++;
+      const wScore = state.globalScores[winnerId];
+      const lScore = state.globalScores[loserId];
+      if (wScore && lScore) {
+        const kFactor = 24;
+        const expectedW = 1 / (1 + Math.pow(10, (lScore.elo - wScore.elo) / 400));
+        wScore.elo += Math.round(kFactor * (1 - expectedW));
+        lScore.elo += Math.round(kFactor * (0 - (1 - expectedW)));
+        wScore.wins++;
+        wScore.matches++;
+        lScore.matches++;
+      }
+      updateCloudStatusBadge();
+
+      // Odeslání do Google Apps Script (používáme text/plain + no-cors pro spolehlivé doručení bez CORS preflightu)
+      await fetch(scriptUrl, {
         method: "POST",
+        mode: "no-cors",
         headers: {
-          "apikey": config.supabaseAnonKey,
-          "Authorization": `Bearer ${config.supabaseAnonKey}`,
-          "Content-Type": "application/json",
-          "Prefer": "return=minimal"
+          "Content-Type": "text/plain;charset=utf-8"
         },
         body: JSON.stringify({
           winner_id: winnerId,
           loser_id: loserId,
+          winner_base_elo: wScore?.elo || 1500,
+          loser_base_elo: lScore?.elo || 1500,
           session_id: state.sessionId,
           created_at: new Date().toISOString()
         })
       });
-
-      if (!res.ok) {
-        console.warn("Chyba při ukládání hlasu do Supabase:", res.status, await res.text());
-      }
     } catch (e) {
-      console.warn("Chyba při odesílání hlasu do cloudu:", e.message);
+      console.warn("Chyba při odesílání hlasu do Google Sheets:", e.message);
     }
   }
 
@@ -261,11 +258,11 @@
     if (!badge) return;
     if (state.isCloudConnected) {
       badge.innerHTML = `🟢 Veřejnost: ${state.totalGlobalVotes} duelů`;
-      badge.title = "Aplikace je propojena se Supabase databází se všemi hlasy hráčů";
+      badge.title = "Aplikace je propojena s Google Sheets databází se všemi hlasy hráčů";
       badge.style.color = "#34d399";
     } else {
       badge.innerHTML = `💾 Lokální režim`;
-      badge.title = "Hlasy se ukládají v prohlížeči (nastavte config.js pro Supabase)";
+      badge.title = "Hlasy se ukládají v prohlížeči (nastavte config.js pro Google Apps Script)";
       badge.style.color = "#94a3b8";
     }
   }
@@ -786,7 +783,7 @@
     const firstColTitle = isUserPersp ? "👤 1. Vaše hlasy" : "👥 1. Hlasování veřejnosti";
     const firstColSub = isUserPersp 
       ? `Odehráno ${state.totalDilemmasAnswered} vašich duelů` 
-      : `Celkem ${state.totalGlobalVotes} hlasů (Supabase)`;
+      : `Celkem ${state.totalGlobalVotes} hlasů (Google Sheets)`;
 
     let svgHtml = `
       <svg class="flow-svg-canvas" viewBox="0 0 ${svgWidth} ${svgHeight}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
