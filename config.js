@@ -3,10 +3,8 @@
  */
 
 window.TRESTY_CONFIG = {
-  // URL vaší Google Apps Script webové aplikace (např. 'https://script.google.com/macros/s/AKfycb.../exec')
-  // Získáte po nasazení skriptu ze souboru google-apps-script.js do Google Tabulky.
-  // Ponechte prázdné "" pro běh v lokálním režimu (localStorage).
-  googleAppScriptUrl: "",
+  // URL vaší Google Apps Script webové aplikace
+  googleAppScriptUrl: "https://script.google.com/macros/s/AKfycbygnWQEt7nfEdFDKrF57yfLEsPBDOSeAnzgA4F4iPCxVtDppsWLGe69Hz-E-ov0D5JsxA/exec",
 
   // Nastavení chytrého párování (matchmakingu)
   matchmaking: {
