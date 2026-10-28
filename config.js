@@ -4,7 +4,7 @@
 
 window.TRESTY_CONFIG = {
   // URL vaší Google Apps Script webové aplikace
-  googleAppScriptUrl: "https://script.google.com/macros/s/AKfycbygnWQEt7nfEdFDKrF57yfLEsPBDOSeAnzgA4F4iPCxVtDppsWLGe69Hz-E-ov0D5JsxA/exec",
+  googleAppScriptUrl: "https://script.google.com/macros/s/AKfycbwXj8IB1X7A5pzpj1XIjw27jfuXCgEbxvTaJ3oiH2WuwQBhdeFsIftIwInDKHLz7wvv/exec",
 
   // Nastavení chytrého párování (matchmakingu)
   matchmaking: {
